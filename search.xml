@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Web-命令执行、Web-文件上传</title>
+    <url>/2023/04/25/Web-%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E3%80%81Web-%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/</url>
+    <content><![CDATA[<h1 id="Web-命令执行、Web-文件上传"><a href="#Web-命令执行、Web-文件上传" class="headerlink" title="Web-命令执行、Web-文件上传"></a>Web-命令执行、Web-文件上传</h1><h2 id="1"><a href="#1" class="headerlink" title="1."></a>1.</h2><p>常用的一些linux命令<br>Curl</p>
+<p>──(root💀kali)-[~]<br>└─# curl <a href="http://baidu.com/">http://baidu.com</a>                                                                          </p>
+<h1 id=""><a href="#" class="headerlink" title=""></a><html></h1><h1 id="-1"><a href="#-1" class="headerlink" title="#"></a><meta http-equiv="refresh" content="0;url=http://www.baidu.com/">#</h1><h1 id="-2"><a href="#-2" class="headerlink" title=""></a></html></h1><p>image.png</p>
+<p>Nc<br>nc也可以传文件，远程控制<br>Nc -lvp 5500 &lt;1.txt</p>
+<p>BP<br>kali自带的字典路径 usr&#x2F;share&#x2F;wordlists&#x2F;metasploit]</p>
+<p>web相关<br>browser&amp;server<br>forntend&amp;backend<br>看得到的 Html，JavaScript，css<br>看不到的 Apache，php，mysql，nodejs</p>
+<p>服务器server，作用管理文档<br>kali自带了apache（80端口）<br>post和response的区别 协议不对称</p>
+<p>cookie&amp;session</p>
+<p>php特性 </p>
+<h1 id="读取文件命令"><a href="#读取文件命令" class="headerlink" title="读取文件命令"></a>读取文件命令</h1><p>cat、tac、head、tail、more、less、xxd、od,nl,gerp,strings,cut,grep,sed,awk,base64，read，printf,<br>#操作文件命令<br>cp,mv,ln</p>
+]]></content>
+  </entry>
+  <entry>
     <title>hello,my first blog</title>
     <url>/2023/04/19/hello-my-first-blog/</url>
     <content><![CDATA[<h1 id="博客操作流程"><a href="#博客操作流程" class="headerlink" title="博客操作流程"></a>博客操作流程</h1><p>首先在博客根目录下右键打开git bash，安装一个扩展npm i hexo-deployer-git。</p>
@@ -87,10 +102,5 @@
 
 <p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
-  </entry>
-  <entry>
-    <title>Web-命令执行、Web-文件上传</title>
-    <url>/2023/04/25/Web-%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E3%80%81Web-%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/</url>
-    <content><![CDATA[<h1 id="Web-命令执行、Web-文件上传"><a href="#Web-命令执行、Web-文件上传" class="headerlink" title="Web-命令执行、Web-文件上传"></a>Web-命令执行、Web-文件上传</h1><h2 id="1"><a href="#1" class="headerlink" title="1."></a>1.</h2>]]></content>
   </entry>
 </search>
