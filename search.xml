@@ -4,7 +4,7 @@
     <title>Web-命令执行、Web-文件上传</title>
     <url>/2023/04/25/Web-%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E3%80%81Web-%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/</url>
     <content><![CDATA[<h1 id="Web-命令执行、Web-文件上传"><a href="#Web-命令执行、Web-文件上传" class="headerlink" title="Web-命令执行、Web-文件上传"></a>Web-命令执行、Web-文件上传</h1><h2 id="1-常用的一些linux命令"><a href="#1-常用的一些linux命令" class="headerlink" title="1.常用的一些linux命令"></a>1.常用的一些linux命令</h2><ol>
-<li>Curl</li>
+<li><strong>Curl</strong><br> $ curl url      不带任何参数时，curl就是发出GET请求</li>
 <li>Nc<br> nc也可以传文件，远程控制<br> Nc -lvp 5500 &lt;1.txt</li>
 <li>BP<br>kali自带的字典路径 usr&#x2F;share&#x2F;wordlists&#x2F;metasploit]</li>
 </ol>
@@ -151,6 +151,70 @@
 <td>重要</td>
 </tr>
 </tbody></table>
+]]></content>
+  </entry>
+  <entry>
+    <title>【武汉 天外来物 ----薛之谦】</title>
+    <url>/2023/05/30/%E3%80%90%E6%AD%A6%E6%B1%89-%E5%A4%A9%E5%A4%96%E6%9D%A5%E7%89%A9-%E8%96%9B%E4%B9%8B%E8%B0%A6%E3%80%91/</url>
+    <content><![CDATA[<h1 id="武汉-薛之谦-天外来客"><a href="#武汉-薛之谦-天外来客" class="headerlink" title="武汉-薛之谦-天外来客"></a>武汉-薛之谦-天外来客</h1><h2 id="一、费用"><a href="#一、费用" class="headerlink" title="一、费用:"></a>一、费用:</h2><p>两张票517<em>2&#x3D;1034 +24到付 1058 往返车费295</em>4&#x3D;1180 住宿 207 合计2445</p>
+<h2 id="二、出行必备"><a href="#二、出行必备" class="headerlink" title="二、出行必备"></a>二、出行必备</h2><ol>
+<li>日常物品:餐巾纸，湿纸巾，口罩，护肤品，防晒伞</li>
+<li>数码类物品:手机，耳机，充电器，充电宝，平板</li>
+<li>证件类:身份证，票</li>
+<li>公交卡，地铁:支付宝搜武汉地铁乘车码，零钱</li>
+</ol>
+<h2 id="旅行思路："><a href="#旅行思路：" class="headerlink" title="旅行思路："></a>旅行思路：</h2><ol>
+<li><p>路线篇：<br>黄鹤楼 1个小时零7分钟<br>古德寺<br>粮食街</p>
+</li>
+<li><p>吃货篇：<br>粮道街  麻圆，鸡冠饺，糯米鸡，面窝，鱼糊粉，豆皮糯米饭，藕汤，<br>万松园，吉庆街，粮道街，油饼包烧麦，严老幺的豆皮&#x2F;烧麦<br>古德寺拍照<br>夜宵：肥肥或者靓靓，靓靓被推荐的是蒸虾鸡爪和凉面（不推荐油闷大虾）MISS u店，咸鱼找人可以至少打8折<br>美猴王生烫牛肉粉<br>司门口黄鹤楼地铁路口</p>
+</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>隐写总结</title>
+    <url>/2023/05/31/%E9%9A%90%E5%86%99%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>[TOC]</p>
+<h1 id="1-总结"><a href="#1-总结" class="headerlink" title="1 总结"></a>1 总结</h1><ol>
+<li><font color=red>图片属性一定要看的，题目给的提示有可能是误导，这点要自己判断. 即使是string看不到，也要手工看下，结果不一样</font></li>
+<li><font color=red>图片放kali</font>,会自动根据文件头识别文件类型</li>
+<li>strings 查看有无特殊字符串 <code>strings -f xxx | egrep -i &quot;flag|key|pass|sec|base|Zmxh|==&quot;</code></li>
+<li>strings <font color=red> | more 需要观察的都要仔细看</font></li>
+<li><font color=red>binwalk(u18)</font>检查图片中有无隐藏内容  </li>
+<li><font color=red>foremost(u18)</font>检查有无隐写，一般需要在kali中提前安装<code>sudo apt-get install foremost</code>，windows备用搜索关键字  </li>
+<li><font color=red>stegsolv</font>导出常见通道格式基本固定，<font color=red>遇到PNG和BMP图片，可以使用zsteg快速分析</font>，命令<code>zsteg -a xx.png</code>，其他图片还是用手工<font color=red>手工效率低下，是下下之选</font>。利用zsteg工具直接导出数据的命令<code>zsteg -e b1,rgb,lsb,xy    题目.png &gt; out.zip</code>。一般会在某个通道看到不一样的图像，其中一种见示例203_Misc-GreatWall</li>
+<li><font color=red>两张图片一模一样</font>，考虑三种：（1）两个图片某些像素不同，通过这些像素进行异或，相加等操作得到新的图片；使用Stegsolve1.3版本的combiner功能计算两个图片的各类组合（2）使用blindwatermark工具 <code>python2 bwm.py decode 1.png 2.png 1122.png</code>  </li>
+<li><font color=red>多张图片，要么一模一样，要么有特征规律（比如像素）</font>,使用Stegsolve1.3版本的combiner功能计算两个图片的各类组合，按照特征规律进行拼图<br>——————————–分隔——————————————</li>
+<li><font color=red>GIF</font>分离很多图片，虽然不会使用python对图片进行识别，但可以通过文件大小排序快速分类</li>
+<li>zsteg可以检测<font color=red>PNG</font>和<font color=red>BMP</font>图片里的隐写数据，在ubuntu18中已安装，先使用zsteg filename，观察有无可见字符，最后用zsteg -a file ：运行给定文件上的所有方法，仔细观察，特别是4&#x2F;5&#x2F;6&#x2F;7开头的两位十六进制码  </li>
+<li>看到<font color=red>PNG</font>要想到修改文件的高度与宽度。新方法：再x64中everything查找“png_height_width_fix.py”，通杀改高、改宽；老方法：修改第二行的第8位数字，那里是图片的高度。如还不行，可以考虑等比例放大，即将第二行的前4位数字double，5-8位数字double。</li>
+<li>看到<strong>BMP</strong>可以考虑高度，位置与PNG类似，<strong>但是结构不一样</strong>，宽度662， 十六进制0x296，图片保存格式为  00 00 96 02 ， 类似大小端</li>
+<li>还有<strong>JPG</strong>高度修改，使用010比较便捷。010路径：struct SOFx sof0 - WORD Y_image</li>
+<li><font color=red>PNG</font>隐写-IDAT，使用pngcheck.exe -v idat.png，一般针对大图片。如果有 IDAT 还没填满（填满6万多）就填充了下一个就要考虑是不是有问题。[[PNG-IDAT隐写]]</li>
+<li>目前了解，针对<font color=red>PNG</font>和<font color=red>JPG</font>，cloacked图片加密隐写，需要密码。<code>python2 lsb.py extract VALORANT.png output.jpg password</code>   密码如果不提供，一般为123456，或者文件名、或者题目名</li>
+<li>看到<font color=red>JPG</font>，还可以考虑使用steghide，<font color=red>优先考虑在u18上使用吧</font>。<code>steghide.exe  extract -sf good-已合并.jpg</code>。还可以考虑stegdetect。<code>stegdetect.exe -tjopi -s 10.0 hide.jpg</code>。还可以考虑使用stegbreak。<code>stegbreak.exe -r rules.ini -f password.dic -t p hide.jpg</code> </li>
+<li>对于jpg图片，是否提示与outguess有关，u18已安装  </li>
+<li>对于jpg图片，先使用SilentEye试试</li>
+<li>identify 1. ——————————–分隔–其他隐写——————————————</li>
+<li>看到base64，如果解码不正常，最后实在不行考虑下base64隐写<code>base64_stego</code>  </li>
+<li>F5隐写，u18\003-Misc\F5-stegxx，使用方法<code>java Extract Misc.jpg</code>，输出结果在<code>output.txt</code>中，可以<code>file output.txt</code>核实文件类型</li>
+<li>基于空格和制表符的隐写，<code>SNOW.exe -p password filename</code></li>
+<li>未知的文件格式，通常关注文件头的格式，同时也要注意文件尾的格式。详见<strong>各类文件特征总结</strong></li>
+<li>word文件可以通过修改后缀的方式解压缩</li>
+<li>doc隐写，本机的doc已经修改<code>选项、显示、隐藏文字</code>;修改后缀为zip，解压缩有用find xargs搜索。</li>
+<li>PDF可以通过x64虚拟机中安装的Foxit PhantomPDF打开，或者右键选择使用wps pdf编辑功能</li>
+<li>pyc隐写<code>python3 stegosaurus.py -x flag.pyc</code></li>
+<li>conf.bin文件用工具routerpassview 打开，注意搜索宽带账号和宽带密码</li>
+<li>MP3隐写：MP3stego需要猜测密码，<code>decode -X -P pass svega_stego.mp3</code></li>
+<li>WAV隐写：SilentEye工具直接打开看看</li>
+<li>MP3、wav隐写：使用audacity软件分析音频是，注意切换<strong>波形</strong> 和 <strong>频谱图</strong>，<strong>调整频谱增益</strong>，看得更清楚；也可以用软件Adobe Audition CS6打开，Shift + D切换两个视图</li>
+<li>如果音乐能正常播放，大概率是在音乐头部和尾部增加了内容，注意放大观察头尾</li>
+<li>wav隐写：audacity软件可以对音频进行剪裁（剪刀图标），dtmf2num.exe在识别时，需要比较纯净的音频。</li>
+<li>wav隐写：SilentEye软件直接打开后按decode</li>
+<li>wav隐写：MMSSTV结合虚拟声卡，播放一下；u16上安装的robot36工具，<code>decode &#39;Can you hear.wav&#39;</code>，ppm文件用ps可以打开。</li>
+<li>01格式的编码可能是二进制编码，也可能是摩斯码。关注长度是否是平方数，可否转换二维码。参考PNG IDAT隐写的例子</li>
+</ol>
+<h1 id="2-如果都尝试过没有思路，看看本文档的附件ppt"><a href="#2-如果都尝试过没有思路，看看本文档的附件ppt" class="headerlink" title="2 如果都尝试过没有思路，看看本文档的附件ppt"></a>2 如果都尝试过没有思路，看看本文档的附件ppt</h1><p>![[杂项.pptx]]</p>
 ]]></content>
   </entry>
 </search>
